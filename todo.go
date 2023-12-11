@@ -1,7 +1,89 @@
 package main
 
-import "fmt"
+import (
+	"net/http"
+	"time"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type Todo struct {
+	ID string `json:"id"`
+	Title string `json:"title"`
+	CreatedAt string `json:"created_at"`
+}
+
+type TodoInput struct {
+	Title string `json:"title"`
+}
+
+var todos []Todo = []Todo{
+	{ID: "155215as4", Title: "Belajar Golang", CreatedAt: "2021-01-01"},
+	{ID: "5a585fsg", Title: "Belajar Gin", CreatedAt: "2021-01-02"},
+	{ID: "8ag5fsss5", Title: "Belajar Gorm", CreatedAt: "2021-01-03"},
+	{ID: "5a5g5f5", Title: "Belajar Golannga", CreatedAt: "2021-01-06"},
+	{ID: "5a5g5fdas5", Title: "Frd Golannga", CreatedAt: "2021-05-04"},
+}
+
+func getTodos(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, todos)
+}
+
+func postTodo(c *gin.Context) {
+	var input TodoInput
+
+	if err:= c.BindJSON(&input); err != nil {
+		return
+	}
+
+	newTodo:= Todo{
+		ID: uuid.New().String(),
+		Title: input.Title,
+		CreatedAt: time.Now().Format("2006-01-02"),
+	}
+
+	todos = append(todos, newTodo)
+	c.IndentedJSON(http.StatusCreated, newTodo)
+}
+
+func getTodoByID(c *gin.Context) {
+	id:= c.Param("id")
+
+	for _, todo:= range todos {
+		if todo.ID == id {
+			c.IndentedJSON(http.StatusOK, todo)
+			return
+		}
+	}
+
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
+}
+
+func updateTodo(c *gin.Context) {
+	var input TodoInput
+	id:= c.Param("id")
+
+	if err:= c.BindJSON(&input); err != nil {
+		return
+	}
+
+	for i, todo:= range todos {
+		if todo.ID == id {
+			todos[i].Title = input.Title
+			c.IndentedJSON(http.StatusOK, todos[i])
+			return
+		}
+	}
+
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
+}
 
 func main() {
-	fmt.Println("Hello World")
+	router:= gin.Default()
+	router.GET("/todos", getTodos)
+	router.GET("/todos/:id", getTodoByID)
+	router.POST("/todos", postTodo)
+	router.PUT("/todos/:id", updateTodo)
+
+	router.Run("localhost:8080")
 }
