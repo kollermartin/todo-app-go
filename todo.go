@@ -97,13 +97,19 @@ func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
 	}
 }
 
-func initializeHandlers(router *gin.Engine) {
+func initializeRouter(logger *logrus.Logger) *gin.Engine {
+	router:= gin.New()
+	
+	router.Use(gin.Recovery())
+	router.Use(LoggerMiddleware(logger))
+
 	router.GET("/todos", getTodos)
 	router.GET("/todos/:id", getTodoByID)
 	router.POST("/todos", postTodo)
 	router.PUT("/todos/:id", updateTodo)
 
-	router.Run("localhost:8080")
+
+	return router;
 }
 
 func initializeConfig() {
@@ -115,15 +121,19 @@ func initializeConfig() {
 
 }
 
-func main() {
-	logger := logrus.New()
+func initializeLogger() *logrus.Logger {
+	logger := logrus.New();
 	logger.Formatter = new(logrus.JSONFormatter)
 	logger.Level = logrus.InfoLevel
 
-	router:= gin.New()
-	router.Use(gin.Recovery())
-	router.Use(LoggerMiddleware(logger))
+	return logger
+}
 
-	initializeHandlers(router)
+func main() {
 	initializeConfig()
+
+	logger := initializeLogger()
+	router := initializeRouter(logger)
+
+	router.Run("localhost:8080")
 }
