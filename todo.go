@@ -3,8 +3,10 @@ package main
 import (
 	"net/http"
 	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -79,6 +81,22 @@ func updateTodo(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
 }
 
+func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		startTime:= time.Now()
+		
+		c.Next()
+
+		logger.WithFields(logrus.Fields{
+			"method": c.Request.Method,
+			"path": c.Request.RequestURI,
+			"status": c.Writer.Status(),
+			"latency": time.Since(startTime),
+			"ip": c.ClientIP(),
+		}).Info("Handled request")
+	}
+}
+
 func initializeHandlers(router *gin.Engine) {
 	router.GET("/todos", getTodos)
 	router.GET("/todos/:id", getTodoByID)
@@ -98,7 +116,13 @@ func initializeConfig() {
 }
 
 func main() {
-	router:= gin.Default()
+	logger := logrus.New()
+	logger.Formatter = new(logrus.JSONFormatter)
+	logger.Level = logrus.InfoLevel
+
+	router:= gin.New()
+	router.Use(gin.Recovery())
+	router.Use(LoggerMiddleware(logger))
 
 	initializeHandlers(router)
 	initializeConfig()
