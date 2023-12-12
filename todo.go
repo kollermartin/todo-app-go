@@ -5,6 +5,7 @@ import (
 	"time"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/spf13/viper"
 )
 
 type Todo struct {
@@ -78,12 +79,27 @@ func updateTodo(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
 }
 
-func main() {
-	router:= gin.Default()
+func initializeHandlers(router *gin.Engine) {
 	router.GET("/todos", getTodos)
 	router.GET("/todos/:id", getTodoByID)
 	router.POST("/todos", postTodo)
 	router.PUT("/todos/:id", updateTodo)
 
 	router.Run("localhost:8080")
+}
+
+func initializeConfig() {
+	viper.AddConfigPath("./configs")
+	viper.SetConfigName("config")
+	viper.SetConfigType("json") 
+
+	viper.ReadInConfig();
+
+}
+
+func main() {
+	router:= gin.Default()
+
+	initializeHandlers(router)
+	initializeConfig()
 }
