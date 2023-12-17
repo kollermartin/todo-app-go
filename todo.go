@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,6 +19,17 @@ type Todo struct {
 
 type TodoInput struct {
 	Title string `json:"title"`
+}
+
+type Config struct {
+    Env      string `mapstructure:"ENV"`
+	Port     string `mapstructure:"PORT"`
+	DBType   string `mapstructure:"DB_TYPE"`
+	DBHost   string `mapstructure:"DB_HOST"`
+	DBPort   string `mapstructure:"DB_PORT"`
+	DBUser   string `mapstructure:"DB_USER"`
+	DBPass   string `mapstructure:"DB_PASS"`
+	DBName   string `mapstructure:"DB_NAME"`
 }
 
 var todos []Todo = []Todo{
@@ -112,13 +124,21 @@ func initializeRouter(logger *logrus.Logger) *gin.Engine {
 	return router;
 }
 
-func initializeConfig() {
-	viper.AddConfigPath("./configs")
-	viper.SetConfigName("config")
-	viper.SetConfigType("json") 
+func loadConfig(path string) (config Config, err error) {
+	viper.AddConfigPath(path)
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env") 
 
-	viper.ReadInConfig();
 
+	if err = viper.ReadInConfig(); err != nil {
+		return Config{}, err
+	}
+
+	if err = viper.Unmarshal(&config); err != nil {
+		return Config{}, err
+	}
+
+	return config, err
 }
 
 func initializeLogger() *logrus.Logger {
@@ -130,10 +150,15 @@ func initializeLogger() *logrus.Logger {
 }
 
 func main() {
-	initializeConfig()
-
 	logger := initializeLogger()
 	router := initializeRouter(logger)
 
+	config, err := loadConfig(".")
+
+	if err != nil {
+		logger.Fatal("cannot load config:", err)
+	}
+
 	router.Run("localhost:8080")
+	fmt.Println(config)
 }

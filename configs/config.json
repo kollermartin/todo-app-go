@@ -1,6 +1,0 @@
-{
-    "db": {
-        "port": 3000
-    },
-    "env": "development"
-}
