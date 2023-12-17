@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+    _ "github.com/lib/pq"
 )
 
 type Todo struct {
@@ -26,7 +28,7 @@ type Config struct {
 	Port     string `mapstructure:"PORT"`
 	DBType   string `mapstructure:"DB_TYPE"`
 	DBHost   string `mapstructure:"DB_HOST"`
-	DBPort   string `mapstructure:"DB_PORT"`
+	DBPort   int `mapstructure:"DB_PORT"`
 	DBUser   string `mapstructure:"DB_USER"`
 	DBPass   string `mapstructure:"DB_PASS"`
 	DBName   string `mapstructure:"DB_NAME"`
@@ -158,6 +160,21 @@ func main() {
 	if err != nil {
 		logger.Fatal("cannot load config:", err)
 	}
+
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
+
+	db, err := sql.Open("postgres", connStr)
+    if err != nil {
+        logger.Fatal(err)
+    }
+    defer db.Close()
+
+    // Test the connection
+    err = db.Ping()
+    if err != nil {
+        logger.Fatal("Cannot connect to the database:", err)
+    }
+
 
 	router.Run("localhost:8080")
 	fmt.Println(config)
