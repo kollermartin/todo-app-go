@@ -16,7 +16,7 @@ import (
 type Todo struct {
 	ID string `json:"id"`
 	Title string `json:"title"`
-	CreatedAt string `json:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type TodoInput struct {
@@ -34,66 +34,90 @@ type Config struct {
 	DBName   string `mapstructure:"DB_NAME"`
 }
 
-var todos []Todo = []Todo{
-	{ID: "155215as4", Title: "Belajar Golang", CreatedAt: "2021-01-01"},
-	{ID: "5a585fsg", Title: "Belajar Gin", CreatedAt: "2021-01-02"},
-	{ID: "8ag5fsss5", Title: "Belajar Gorm", CreatedAt: "2021-01-03"},
-	{ID: "5a5g5f5", Title: "Belajar Golannga", CreatedAt: "2021-01-06"},
-	{ID: "5a5g5fdas5", Title: "Frd Golannga", CreatedAt: "2021-05-04"},
+func getTodos(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rows, err := db.Query("SELECT id, title, created_at FROM todos")
+
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		defer rows.Close()
+
+		var todos []Todo = []Todo{}
+		for rows.Next() {
+			var todo Todo
+			if err := rows.Scan(&todo.ID, &todo.Title, &todo.CreatedAt); err != nil {
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			}
+
+			todos = append(todos, todo)
+		}
+
+		c.IndentedJSON(http.StatusOK, todos)
+	}
 }
 
-func getTodos(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, todos)
-}
+func postTodo(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var input TodoInput
 
-func postTodo(c *gin.Context) {
-	var input TodoInput
+		if err:= c.BindJSON(&input); err != nil {
+			return
+		}
 
-	if err:= c.BindJSON(&input); err != nil {
+		newTodo:= Todo{
+			ID: uuid.New().String(),
+			Title: input.Title,
+			CreatedAt: time.Now(),
+		}
+
+		fmt.Println(newTodo.CreatedAt)
+
+	_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", newTodo.ID, newTodo.Title, newTodo.CreatedAt)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	newTodo:= Todo{
-		ID: uuid.New().String(),
-		Title: input.Title,
-		CreatedAt: time.Now().Format("2006-01-02"),
-	}
-
-	todos = append(todos, newTodo)
 	c.IndentedJSON(http.StatusCreated, newTodo)
+
+	}
 }
 
-func getTodoByID(c *gin.Context) {
-	id:= c.Param("id")
+// func getTodoByID(c *gin.Context) {
+// 	id:= c.Param("id")
 
-	for _, todo:= range todos {
-		if todo.ID == id {
-			c.IndentedJSON(http.StatusOK, todo)
-			return
-		}
-	}
+// 	for _, todo:= range todos {
+// 		if todo.ID == id {
+// 			c.IndentedJSON(http.StatusOK, todo)
+// 			return
+// 		}
+// 	}
 
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
-}
+// 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
+// }
 
-func updateTodo(c *gin.Context) {
-	var input TodoInput
-	id:= c.Param("id")
+// func updateTodo(c *gin.Context) {
+// 	var input TodoInput
+// 	id:= c.Param("id")
 
-	if err:= c.BindJSON(&input); err != nil {
-		return
-	}
+// 	if err:= c.BindJSON(&input); err != nil {
+// 		return
+// 	}
 
-	for i, todo:= range todos {
-		if todo.ID == id {
-			todos[i].Title = input.Title
-			c.IndentedJSON(http.StatusOK, todos[i])
-			return
-		}
-	}
+// 	for i, todo:= range todos {
+// 		if todo.ID == id {
+// 			todos[i].Title = input.Title
+// 			c.IndentedJSON(http.StatusOK, todos[i])
+// 			return
+// 		}
+// 	}
 
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
-}
+// 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
+// }
 
 func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -117,12 +141,6 @@ func initializeRouter(logger *logrus.Logger) *gin.Engine {
 	router.Use(gin.Recovery())
 	router.Use(LoggerMiddleware(logger))
 
-	router.GET("/todos", getTodos)
-	router.GET("/todos/:id", getTodoByID)
-	router.POST("/todos", postTodo)
-	router.PUT("/todos/:id", updateTodo)
-
-
 	return router;
 }
 
@@ -130,7 +148,6 @@ func loadConfig(path string) (config Config, err error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env") 
-
 
 	if err = viper.ReadInConfig(); err != nil {
 		return Config{}, err
@@ -151,6 +168,31 @@ func initializeLogger() *logrus.Logger {
 	return logger
 }
 
+func initializeDB(config Config) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
+	db, err := sql.Open(config.DBType, connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+
+	// Example table creation
+	createTableSQL := `CREATE TABLE IF NOT EXISTS todos (
+		id UUID PRIMARY KEY,
+		title TEXT NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);`
+	_, err = db.Exec(createTableSQL)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
 func main() {
 	logger := initializeLogger()
 	router := initializeRouter(logger)
@@ -161,20 +203,19 @@ func main() {
 		logger.Fatal("cannot load config:", err)
 	}
 
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
+	db, err := initializeDB(config)
 
-	db, err := sql.Open("postgres", connStr)
-    if err != nil {
-        logger.Fatal(err)
-    }
+	if err != nil {
+		logger.Fatal("cannot initialize db:", err)
+	}
+
     defer db.Close()
 
-    // Test the connection
-    err = db.Ping()
-    if err != nil {
-        logger.Fatal("Cannot connect to the database:", err)
-    }
 
+	router.GET("/todos", getTodos(db))
+	router.POST("/todos", postTodo(db))
+	// router.GET("/todos/:id", getTodoByID)
+	// router.PUT("/todos/:id", updateTodo)
 
 	router.Run("localhost:8080")
 	fmt.Println(config)
