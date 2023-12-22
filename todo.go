@@ -87,37 +87,66 @@ func postTodo(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-// func getTodoByID(c *gin.Context) {
-// 	id:= c.Param("id")
+func getTodoByID(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id");
 
-// 	for _, todo:= range todos {
-// 		if todo.ID == id {
-// 			c.IndentedJSON(http.StatusOK, todo)
-// 			return
-// 		}
-// 	}
+		var todo Todo
 
-// 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
-// }
+		err := db.QueryRow("SELECT * from todos where id = $1", id).Scan(&todo.ID, &todo.Title, &todo.CreatedAt)
 
-// func updateTodo(c *gin.Context) {
-// 	var input TodoInput
-// 	id:= c.Param("id")
 
-// 	if err:= c.BindJSON(&input); err != nil {
-// 		return
-// 	}
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
+			} else {
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			}
+			return
+		}
 
-// 	for i, todo:= range todos {
-// 		if todo.ID == id {
-// 			todos[i].Title = input.Title
-// 			c.IndentedJSON(http.StatusOK, todos[i])
-// 			return
-// 		}
-// 	}
+		c.IndentedJSON(http.StatusOK, todo)
+	}
+}
 
-// 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
-// }
+func updateTodo(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var todoInput TodoInput;
+		var updatedTodo Todo;
+
+		id := c.Param("id")
+
+		if err:= c.BindJSON(&todoInput); err != nil {
+			return
+		}
+
+		result, err:= db.Exec("UPDATE todos SET title = $1 WHERE id = $2", todoInput.Title, id)
+
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		if rowsAffected == 0 {
+			c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
+			return
+		}
+
+		err = db.QueryRow("SELECT * from todos where id = $1", id).Scan(&updatedTodo.ID, &updatedTodo.Title, &updatedTodo.CreatedAt)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, updatedTodo)
+	}
+}
 
 func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -214,8 +243,8 @@ func main() {
 
 	router.GET("/todos", getTodos(db))
 	router.POST("/todos", postTodo(db))
-	// router.GET("/todos/:id", getTodoByID)
-	// router.PUT("/todos/:id", updateTodo)
+	router.GET("/todos/:id", getTodoByID(db))
+	router.PUT("/todos/:id", updateTodo(db))
 
 	router.Run("localhost:8080")
 	fmt.Println(config)
