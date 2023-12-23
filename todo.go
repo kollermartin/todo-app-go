@@ -3,150 +3,17 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
+	"todo-app/types"
+	"todo-app/api"
+
     _ "github.com/lib/pq"
 )
-
-type Todo struct {
-	ID string `json:"id"`
-	Title string `json:"title"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-type TodoInput struct {
-	Title string `json:"title"`
-}
-
-type Config struct {
-    Env      string `mapstructure:"ENV"`
-	Port     string `mapstructure:"PORT"`
-	DBType   string `mapstructure:"DB_TYPE"`
-	DBHost   string `mapstructure:"DB_HOST"`
-	DBPort   int `mapstructure:"DB_PORT"`
-	DBUser   string `mapstructure:"DB_USER"`
-	DBPass   string `mapstructure:"DB_PASS"`
-	DBName   string `mapstructure:"DB_NAME"`
-}
-
-func getTodos(db *sql.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		rows, err := db.Query("SELECT id, title, created_at FROM todos")
-
-		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
-		}
-
-		defer rows.Close()
-
-		var todos []Todo = []Todo{}
-		for rows.Next() {
-			var todo Todo
-			if err := rows.Scan(&todo.ID, &todo.Title, &todo.CreatedAt); err != nil {
-				c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			}
-
-			todos = append(todos, todo)
-		}
-
-		c.IndentedJSON(http.StatusOK, todos)
-	}
-}
-
-func postTodo(db *sql.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var input TodoInput
-
-		if err:= c.BindJSON(&input); err != nil {
-			return
-		}
-
-		newTodo:= Todo{
-			ID: uuid.New().String(),
-			Title: input.Title,
-			CreatedAt: time.Now(),
-		}
-
-		fmt.Println(newTodo.CreatedAt)
-
-	_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", newTodo.ID, newTodo.Title, newTodo.CreatedAt)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-
-	c.IndentedJSON(http.StatusCreated, newTodo)
-
-	}
-}
-
-func getTodoByID(db *sql.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id := c.Param("id");
-
-		var todo Todo
-
-		err := db.QueryRow("SELECT * from todos where id = $1", id).Scan(&todo.ID, &todo.Title, &todo.CreatedAt)
-
-
-		if err != nil {
-			if err == sql.ErrNoRows {
-				c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
-			} else {
-				c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			}
-			return
-		}
-
-		c.IndentedJSON(http.StatusOK, todo)
-	}
-}
-
-func updateTodo(db *sql.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var todoInput TodoInput;
-		var updatedTodo Todo;
-
-		id := c.Param("id")
-
-		if err:= c.BindJSON(&todoInput); err != nil {
-			return
-		}
-
-		result, err:= db.Exec("UPDATE todos SET title = $1 WHERE id = $2", todoInput.Title, id)
-
-		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
-		}
-
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
-		}
-
-		if rowsAffected == 0 {
-			c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Todo not found"})
-			return
-		}
-
-		err = db.QueryRow("SELECT * from todos where id = $1", id).Scan(&updatedTodo.ID, &updatedTodo.Title, &updatedTodo.CreatedAt)
-		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
-		}
-
-		c.IndentedJSON(http.StatusOK, updatedTodo)
-	}
-}
 
 func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -173,17 +40,17 @@ func initializeRouter(logger *logrus.Logger) *gin.Engine {
 	return router;
 }
 
-func loadConfig(path string) (config Config, err error) {
+func loadConfig(path string) (config types.Config, err error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env") 
 
 	if err = viper.ReadInConfig(); err != nil {
-		return Config{}, err
+		return types.Config{}, err
 	}
 
 	if err = viper.Unmarshal(&config); err != nil {
-		return Config{}, err
+		return types.Config{}, err
 	}
 
 	return config, err
@@ -197,7 +64,7 @@ func initializeLogger() *logrus.Logger {
 	return logger
 }
 
-func initializeDB(config Config) (*sql.DB, error) {
+func initializeDB(config types.Config) (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
 	db, err := sql.Open(config.DBType, connStr)
 	if err != nil {
@@ -241,10 +108,10 @@ func main() {
     defer db.Close()
 
 
-	router.GET("/todos", getTodos(db))
-	router.POST("/todos", postTodo(db))
-	router.GET("/todos/:id", getTodoByID(db))
-	router.PUT("/todos/:id", updateTodo(db))
+	router.GET("/todos", api.GetTodos(db))
+	router.POST("/todos", api.PostTodo(db))
+	router.GET("/todos/:id", api.GetTodoByID(db))
+	router.PUT("/todos/:id", api.UpdateTodo(db))
 
 	router.Run("localhost:8080")
 	fmt.Println(config)
