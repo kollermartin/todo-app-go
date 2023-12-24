@@ -15,7 +15,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func initializeRouter(logger *logrus.Logger) *gin.Engine {
+func initRouter(logger *logrus.Logger) *gin.Engine {
 	router := gin.New()
 
 	router.Use(gin.Recovery())
@@ -40,7 +40,7 @@ func loadConfig(path string) (config types.Config, err error) {
 	return config, err
 }
 
-func initializeLogger() *logrus.Logger {
+func initLogger() *logrus.Logger {
 	logger := logrus.New()
 	logger.Formatter = new(logrus.JSONFormatter)
 	logger.Level = logrus.InfoLevel
@@ -48,7 +48,7 @@ func initializeLogger() *logrus.Logger {
 	return logger
 }
 
-func initializeDB(config types.Config) (*sql.DB, error) {
+func initDB(config types.Config) (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
 	db, err := sql.Open(config.DBType, connStr)
 	if err != nil {
@@ -59,7 +59,6 @@ func initializeDB(config types.Config) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Example table creation
 	createTableSQL := `CREATE TABLE IF NOT EXISTS todos (
 		id UUID PRIMARY KEY,
 		title TEXT NOT NULL,
@@ -74,8 +73,8 @@ func initializeDB(config types.Config) (*sql.DB, error) {
 }
 
 func main() {
-	logger := initializeLogger()
-	router := initializeRouter(logger)
+	logger := initLogger()
+	router := initRouter(logger)
 
 	config, err := loadConfig(".")
 
@@ -86,7 +85,7 @@ func main() {
 		}).Fatal("Failed to load config")
 	}
 
-	db, err := initializeDB(config)
+	db, err := initDB(config)
 
 	if err != nil {
 		logger.WithFields(logrus.Fields{
