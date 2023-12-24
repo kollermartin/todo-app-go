@@ -80,13 +80,19 @@ func main() {
 	config, err := loadConfig(".")
 
 	if err != nil {
-		logger.Fatal("cannot load config:", err)
+		logger.WithFields(logrus.Fields{
+			"event": "config_load_fail",
+			"error": err.Error(),
+		}).Fatal("Failed to load config")
 	}
 
 	db, err := initializeDB(config)
 
 	if err != nil {
-		logger.Fatal("cannot initialize db:", err)
+		logger.WithFields(logrus.Fields{
+			"event": "db_init_fail",
+			"error": err.Error(),
+		}).Fatal("Failed to initialize database")
 	}
 
 	defer db.Close()
