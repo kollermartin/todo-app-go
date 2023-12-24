@@ -7,11 +7,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 
 	"todo-app/types"
 )
 
-func GetTodos(db *sql.DB) gin.HandlerFunc {
+func GetTodos(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rows, err := db.Query("SELECT id, title, created_at FROM todos")
 
@@ -36,40 +37,39 @@ func GetTodos(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func PostTodo(db *sql.DB) gin.HandlerFunc {
+func PostTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input types.TodoInput
 
-		if err:= c.BindJSON(&input); err != nil {
+		if err := c.BindJSON(&input); err != nil {
 			return
 		}
 
-		newTodo:= types.Todo{
-			ID: uuid.New().String(),
-			Title: input.Title,
+		newTodo := types.Todo{
+			ID:        uuid.New().String(),
+			Title:     input.Title,
 			CreatedAt: time.Now(),
 		}
 
-	_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", newTodo.ID, newTodo.Title, newTodo.CreatedAt)
+		_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", newTodo.ID, newTodo.Title, newTodo.CreatedAt)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
 
-	c.IndentedJSON(http.StatusCreated, newTodo)
+		c.IndentedJSON(http.StatusCreated, newTodo)
 
 	}
 }
 
-func GetTodoByID(db *sql.DB) gin.HandlerFunc {
+func GetTodoByID(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id");
+		id := c.Param("id")
 
 		var todo types.Todo
 
 		err := db.QueryRow("SELECT * from todos where id = $1", id).Scan(&todo.ID, &todo.Title, &todo.CreatedAt)
-
 
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -84,18 +84,18 @@ func GetTodoByID(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateTodo(db *sql.DB) gin.HandlerFunc {
+func UpdateTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var todoInput types.TodoInput;
-		var updatedTodo types.Todo;
+		var todoInput types.TodoInput
+		var updatedTodo types.Todo
 
 		id := c.Param("id")
 
-		if err:= c.BindJSON(&todoInput); err != nil {
+		if err := c.BindJSON(&todoInput); err != nil {
 			return
 		}
 
-		result, err:= db.Exec("UPDATE todos SET title = $1 WHERE id = $2", todoInput.Title, id)
+		result, err := db.Exec("UPDATE todos SET title = $1 WHERE id = $2", todoInput.Title, id)
 
 		if err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})

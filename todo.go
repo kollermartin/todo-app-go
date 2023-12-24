@@ -3,47 +3,31 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"todo-app/types"
 	"todo-app/api"
+	"todo-app/middlewares"
+	"todo-app/types"
 
-    _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
-func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		startTime:= time.Now()
-		
-		c.Next()
-
-		logger.WithFields(logrus.Fields{
-			"method": c.Request.Method,
-			"path": c.Request.RequestURI,
-			"status": c.Writer.Status(),
-			"latency": time.Since(startTime),
-			"ip": c.ClientIP(),
-		}).Info("Handled request")
-	}
-}
-
 func initializeRouter(logger *logrus.Logger) *gin.Engine {
-	router:= gin.New()
-	
-	router.Use(gin.Recovery())
-	router.Use(LoggerMiddleware(logger))
+	router := gin.New()
 
-	return router;
+	router.Use(gin.Recovery())
+	router.Use(middlewares.LoggerMiddleware(logger))
+
+	return router
 }
 
 func loadConfig(path string) (config types.Config, err error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName(".env")
-	viper.SetConfigType("env") 
+	viper.SetConfigType("env")
 
 	if err = viper.ReadInConfig(); err != nil {
 		return types.Config{}, err
@@ -57,7 +41,7 @@ func loadConfig(path string) (config types.Config, err error) {
 }
 
 func initializeLogger() *logrus.Logger {
-	logger := logrus.New();
+	logger := logrus.New()
 	logger.Formatter = new(logrus.JSONFormatter)
 	logger.Level = logrus.InfoLevel
 
@@ -105,14 +89,12 @@ func main() {
 		logger.Fatal("cannot initialize db:", err)
 	}
 
-    defer db.Close()
+	defer db.Close()
 
-
-	router.GET("/todos", api.GetTodos(db))
-	router.POST("/todos", api.PostTodo(db))
-	router.GET("/todos/:id", api.GetTodoByID(db))
-	router.PUT("/todos/:id", api.UpdateTodo(db))
+	router.GET("/todos", api.GetTodos(db, logger))
+	router.POST("/todos", api.PostTodo(db, logger))
+	router.GET("/todos/:id", api.GetTodoByID(db, logger))
+	router.PUT("/todos/:id", api.UpdateTodo(db, logger))
 
 	router.Run("localhost:8080")
-	fmt.Println(config)
 }
