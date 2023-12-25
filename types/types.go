@@ -20,5 +20,5 @@ type Todo struct {
 }
 
 type TodoInput struct {
-	Title string `json:"title"`
+	Title string `json:"title" binding:"required"`
 }
