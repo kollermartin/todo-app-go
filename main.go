@@ -7,12 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 
 	"todo-app/api"
 	"todo-app/middlewares"
 	"todo-app/types"
 
 	_ "github.com/lib/pq"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func initRouter(logger *logrus.Logger) *gin.Engine {
@@ -48,9 +51,31 @@ func initLogger() *logrus.Logger {
 	return logger
 }
 
-func initDB(config types.Config) (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
-	db, err := sql.Open(config.DBType, connStr)
+func runMigrations(db *sql.DB, migrationsPath string) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationsPath,
+		"postgres", driver,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if err := m.Up(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func initDB(config types.Config, cString string) (*sql.DB, error) {
+	db, err := sql.Open(config.DBType, cString)
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +84,7 @@ func initDB(config types.Config) (*sql.DB, error) {
 		return nil, err
 	}
 
-	createTableSQL := `CREATE TABLE IF NOT EXISTS todos (
-		id UUID PRIMARY KEY,
-		title TEXT NOT NULL,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);`
-	_, err = db.Exec(createTableSQL)
-	if err != nil {
+	if err := runMigrations(db, config.MigrationsPath); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +104,9 @@ func main() {
 		}).Fatal("Failed to load config")
 	}
 
-	db, err := initDB(config)
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
+
+	db, err := initDB(config, connStr)
 
 	if err != nil {
 		logger.WithFields(logrus.Fields{
