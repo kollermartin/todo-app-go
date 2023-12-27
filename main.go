@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	"todo-app/api"
 	"todo-app/middlewares"
 	"todo-app/types"
 
-	_ "github.com/lib/pq"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 )
 
 func initRouter(logger *logrus.Logger) *gin.Engine {
@@ -122,5 +122,10 @@ func main() {
 	router.GET("/todos/:id", api.GetTodoByID(db, logger))
 	router.PUT("/todos/:id", api.UpdateTodo(db, logger))
 
-	router.Run("localhost:8080")
+	if err := router.Run("localhost:8080"); err != nil {
+		logger.WithFields(logrus.Fields{
+			"event": "server_run_fail",
+			"error": err.Error(),
+		}).Fatal("Failed to run server")
+	}
 }
