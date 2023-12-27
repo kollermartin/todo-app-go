@@ -13,10 +13,9 @@ import (
 	"todo-app/api"
 	"todo-app/middlewares"
 	"todo-app/types"
-	_ "github.com/lib/pq"
-
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 )
 
 func initRouter(logger *logrus.Logger) *gin.Engine {
@@ -71,7 +70,6 @@ func runMigrations(db *sql.DB, migrationsPath string) error {
 	if err := m.Up(); err != nil {
 		return err
 	}
-
 
 	return nil
 }
