@@ -9,14 +9,14 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	_ "github.com/lib/pq"
-
 
 	"todo-app/api"
 	"todo-app/middlewares"
 	"todo-app/types"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+	
 )
 
 func initRouter(logger *logrus.Logger) *gin.Engine {
