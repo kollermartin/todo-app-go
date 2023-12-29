@@ -1,4 +1,4 @@
-package test
+package utils
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+	"todo-app/types"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -23,7 +24,19 @@ type TestDB struct {
 	Container  testcontainers.Container
 }
 
-func CreateTestDB() *TestDB {
+func SeedDB(db *sql.DB, testData []types.Todo) error {
+	for _, todo := range testData {
+		_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", todo.ID, todo.Title, todo.CreatedAt)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CreateTestDB(testData []types.Todo) *TestDB {
 	var env = map[string]string{
 		"POSTGRES_PASSWORD": "postgres",
 		"POSTGRES_USER":     "postgres",
@@ -78,6 +91,15 @@ func CreateTestDB() *TestDB {
 	if err = runMigrations(db, "migrations"); err != nil {
 		log.Fatal("Error: Could not run migrations")
 		panic(err)
+	}
+
+	if (testData != nil) && (len(testData) > 0) {
+		time.Sleep(time.Second)
+
+		if err := SeedDB(db, testData); err != nil {
+			log.Fatal("Error: Could not seed database")
+			panic(err)
+		}
 	}
 
 	return &TestDB{

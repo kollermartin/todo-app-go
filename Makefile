@@ -1,7 +1,7 @@
 .PHONY: fmt
 
 # Format all Go files in unix-like environment
-fmt-unix:
+fmt:
 	@echo "Formatting Go files"
 	@find . -name "*.go" -type f -exec go fmt {} \;
 
@@ -20,4 +20,4 @@ run:
 	./bin/app
 
 test:
-	go test -v ./... count=1
+	go test -v ./...
