@@ -53,13 +53,13 @@ func TestGetTodos(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	t.Run("It should get all todos", func(t *testing.T) {	
+	t.Run("It should get all todos", func(t *testing.T) {
 		var todos []types.Todo
 		err := json.Unmarshal(w.Body.Bytes(), &todos)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response body: %v", err)
 		}
-	
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, len(testData), len(todos))
 	})
@@ -72,17 +72,17 @@ func TestGetTodoByID(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/todos/"+todo.ID, nil)
 
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		var todoResponse types.Todo
-	
+
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
-	
+
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response body: %v", err)
 		}
-	
+
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.EqualValues(t, todo, todoResponse)
 	})
@@ -91,20 +91,20 @@ func TestGetTodoByID(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/todos/123", nil)
 
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
 	t.Run("It should return 404 if todo is not found", func(t *testing.T) {
 		randomUUID := uuid.New().String()
-		req, _ := http.NewRequest("GET", "/todos/" + randomUUID, nil)
+		req, _ := http.NewRequest("GET", "/todos/"+randomUUID, nil)
 
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }
@@ -112,46 +112,46 @@ func TestGetTodoByID(t *testing.T) {
 func TestCreateTodo(t *testing.T) {
 	t.Run("It should create a new todo", func(t *testing.T) {
 
-	todoInput := types.TodoInput{
-		Title: "Test todo",
-	}
+		todoInput := types.TodoInput{
+			Title: "Test todo",
+		}
 
-	jsonValue,_ := json.Marshal(todoInput)
+		jsonValue, _ := json.Marshal(todoInput)
 
-	req, _ := http.NewRequest("POST", "/todos", bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("POST", "/todos", bytes.NewBuffer(jsonValue))
 
-	w := httptest.NewRecorder()
+		w := httptest.NewRecorder()
 
-	router.ServeHTTP(w, req)
+		router.ServeHTTP(w, req)
 
-	assert.Equal(t, 201, w.Code)
+		assert.Equal(t, 201, w.Code)
 
-	var todoResponse types.Todo
+		var todoResponse types.Todo
 
-	err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
+		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
-	if err != nil {
-		t.Fatalf("Failed to unmarshal response body: %v", err)
-	}
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response body: %v", err)
+		}
 
-	assert.Equal(t, todoInput.Title, todoResponse.Title)
-	assert.NotEmpty(t, todoResponse.ID)
-	assert.NotEmpty(t, todoResponse.CreatedAt)
+		assert.Equal(t, todoInput.Title, todoResponse.Title)
+		assert.NotEmpty(t, todoResponse.ID)
+		assert.NotEmpty(t, todoResponse.CreatedAt)
 	})
 
 	t.Run("It should return 400 if title is missing", func(t *testing.T) {
 		todoInput := types.TodoInput{
 			Title: "",
 		}
-	
-		jsonValue,_ := json.Marshal(todoInput)
-	
+
+		jsonValue, _ := json.Marshal(todoInput)
+
 		req, _ := http.NewRequest("POST", "/todos", bytes.NewBuffer(jsonValue))
-	
+
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		assert.Equal(t, 400, w.Code)
 	})
 }
@@ -161,9 +161,9 @@ func TestUpdateTodo(t *testing.T) {
 		req, _ := http.NewRequest("PUT", "/todos/123", nil)
 
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
@@ -174,14 +174,14 @@ func TestUpdateTodo(t *testing.T) {
 			Title: "Updated task",
 		}
 
-		jsonValue,_ := json.Marshal(todoInput)
+		jsonValue, _ := json.Marshal(todoInput)
 
-		req, _ := http.NewRequest("PUT", "/todos/" + todo.ID, bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("PUT", "/todos/"+todo.ID, bytes.NewBuffer(jsonValue))
 
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		var todoResponse types.Todo
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
@@ -200,14 +200,14 @@ func TestUpdateTodo(t *testing.T) {
 			Title: "Updated task",
 		}
 
-		jsonValue,_ := json.Marshal(todoInput)
+		jsonValue, _ := json.Marshal(todoInput)
 
-		req, _ := http.NewRequest("PUT", "/todos/" + randomUUID, bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("PUT", "/todos/"+randomUUID, bytes.NewBuffer(jsonValue))
 
 		w := httptest.NewRecorder()
-	
+
 		router.ServeHTTP(w, req)
-	
+
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }

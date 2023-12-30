@@ -29,7 +29,7 @@ func SeedDB(db *sql.DB, testData []types.Todo) error {
 	if testData == nil && len(testData) == 0 {
 		return nil
 	}
-	
+
 	for _, todo := range testData {
 		_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", todo.ID, todo.Title, todo.CreatedAt)
 
@@ -37,7 +37,6 @@ func SeedDB(db *sql.DB, testData []types.Todo) error {
 			return err
 		}
 	}
-
 
 	return nil
 }
@@ -52,7 +51,7 @@ func CreateTestDB(testData []types.Todo) (*TestDB, error) {
 		return nil, err
 	}
 
-	db,err := setupDBConnection(host, port)
+	db, err := setupDBConnection(host, port)
 
 	if err != nil {
 		return nil, err
@@ -82,11 +81,11 @@ func (t *TestDB) CleanUp() {
 
 func setupDBConnection(host string, port string) (*sql.DB, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=postgres sslmode=disable", host, port)
-	
+
 	db, err := sql.Open("postgres", connStr)
 
 	// TODO - Fix this
-	time.Sleep(time.Second);
+	time.Sleep(time.Second)
 
 	if err != nil {
 		return nil, err
@@ -95,7 +94,7 @@ func setupDBConnection(host string, port string) (*sql.DB, error) {
 	return db, nil
 }
 
-func createTestContainer(ctx context.Context) (container testcontainers.Container,host string,port string,error error) {
+func createTestContainer(ctx context.Context) (container testcontainers.Container, host string, port string, error error) {
 	var env = map[string]string{
 		"POSTGRES_PASSWORD": "postgres",
 		"POSTGRES_USER":     "postgres",
@@ -103,7 +102,6 @@ func createTestContainer(ctx context.Context) (container testcontainers.Containe
 	}
 
 	var natPort nat.Port
-
 
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:latest",
