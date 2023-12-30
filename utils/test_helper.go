@@ -10,6 +10,7 @@ import (
 	"time"
 	"todo-app/types"
 
+	"github.com/docker/go-connections/nat"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/testcontainers/testcontainers-go"
@@ -25,6 +26,10 @@ type TestDB struct {
 }
 
 func SeedDB(db *sql.DB, testData []types.Todo) error {
+	if testData == nil && len(testData) == 0 {
+		return nil
+	}
+	
 	for _, todo := range testData {
 		_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", todo.ID, todo.Title, todo.CreatedAt)
 
@@ -33,17 +38,73 @@ func SeedDB(db *sql.DB, testData []types.Todo) error {
 		}
 	}
 
+
 	return nil
 }
 
-func CreateTestDB(testData []types.Todo) *TestDB {
+func CreateTestDB(testData []types.Todo) (*TestDB, error) {
+
+	ctx := context.Background()
+
+	container, host, port, err := createTestContainer(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	db,err := setupDBConnection(host, port)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = runMigrations(db, "migrations"); err != nil {
+		return nil, err
+	}
+
+	if err := SeedDB(db, testData); err != nil {
+		return nil, err
+	}
+
+	return &TestDB{
+		DbInstance: db,
+		Container:  container,
+	}, nil
+}
+
+func (t *TestDB) CleanUp() {
+	t.DbInstance.Close()
+	if err := t.Container.Terminate(context.Background()); err != nil {
+		log.Fatal("Error: Could not terminate container")
+		panic(err)
+	}
+}
+
+func setupDBConnection(host string, port string) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=postgres sslmode=disable", host, port)
+	
+	db, err := sql.Open("postgres", connStr)
+
+	// TODO - Fix this
+	time.Sleep(time.Second);
+
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func createTestContainer(ctx context.Context) (container testcontainers.Container,host string,port string,error error) {
 	var env = map[string]string{
 		"POSTGRES_PASSWORD": "postgres",
 		"POSTGRES_USER":     "postgres",
 		"POSTGRES_DB":       "postgres",
 	}
 
-	ctx := context.Background()
+	var natPort nat.Port
+
+
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:latest",
 		ExposedPorts: []string{"5432/tcp"},
@@ -57,63 +118,24 @@ func CreateTestDB(testData []types.Todo) *TestDB {
 	})
 
 	if err != nil {
-		log.Fatal("Error: Could not start postgres container")
-		panic(err)
+		return nil, "", "", err
 	}
 
-	port, err := container.MappedPort(ctx, "5432")
+	host, err = container.Host(ctx)
 
 	if err != nil {
-		log.Fatal("Error: Could not get mapped port")
-		panic(err)
+		return nil, "", "", err
 	}
 
-	host, err := container.Host(ctx)
+	natPort, err = container.MappedPort(ctx, "5432")
 
 	if err != nil {
-		log.Fatal("Error: Could not get host")
-		panic(err)
+		return nil, "", "", err
 	}
 
-	connStr := fmt.Sprintf("host=%s port=%d user=postgres password=postgres dbname=postgres sslmode=disable", host, port.Int())
+	port = natPort.Port()
 
-	time.Sleep(time.Second)
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(
-			"Error: The data source arguments are not valid",
-		)
-		panic(err)
-	}
-	time.Sleep(time.Second)
-
-	if err = runMigrations(db, "migrations"); err != nil {
-		log.Fatal("Error: Could not run migrations")
-		panic(err)
-	}
-
-	if (testData != nil) && (len(testData) > 0) {
-		time.Sleep(time.Second)
-
-		if err := SeedDB(db, testData); err != nil {
-			log.Fatal("Error: Could not seed database")
-			panic(err)
-		}
-	}
-
-	return &TestDB{
-		DbInstance: db,
-		Container:  container,
-	}
-}
-
-func (t *TestDB) CleanUp() {
-	t.DbInstance.Close()
-	if err := t.Container.Terminate(context.Background()); err != nil {
-		log.Fatal("Error: Could not terminate container")
-		panic(err)
-	}
+	return container, host, port, nil
 }
 
 func runMigrations(db *sql.DB, migrationsPath string) error {

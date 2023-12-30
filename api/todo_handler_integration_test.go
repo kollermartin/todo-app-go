@@ -213,7 +213,11 @@ func TestUpdateTodo(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	testDB := utils.CreateTestDB(testData)
+	testDB, error := utils.CreateTestDB(testData)
+
+	if error != nil {
+		panic(error.Error())
+	}
 
 	db = testDB.DbInstance
 
