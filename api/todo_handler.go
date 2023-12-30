@@ -196,3 +196,47 @@ func UpdateTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 		c.IndentedJSON(http.StatusOK, updatedTodo)
 	}
 }
+
+func DeleteTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		eventKey := "todo_delete"
+		eventErrorKey := "todo_delete_fail"
+
+		id := c.Param("id")
+
+		if !isValidUUID(id) {
+			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
+
+			return
+		}
+
+		result, err := db.Exec("DELETE FROM todos WHERE id = $1", id)
+
+		if err != nil {
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+
+			return
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+
+			return
+		}
+
+		if rowsAffected == 0 {
+			logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"id": id})
+
+			return
+		}
+
+		log.WithFields(logrus.Fields{
+			"event":   eventKey,
+			"id":      id,
+			"handler": c.HandlerName(),
+		}).Info("Deleted todo")
+
+		c.Status(http.StatusNoContent)
+	}
+}

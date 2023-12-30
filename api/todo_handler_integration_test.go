@@ -44,6 +44,7 @@ func setupRouter() {
 	router.GET("/todos/:id", GetTodoByID(db, log))
 	router.POST("/todos", CreateTodo(db, log))
 	router.PUT("/todos/:id", UpdateTodo(db, log))
+	router.DELETE("/todos/:id", DeleteTodo(db, log))
 
 }
 
@@ -203,6 +204,42 @@ func TestUpdateTodo(t *testing.T) {
 		jsonValue, _ := json.Marshal(todoInput)
 
 		req, _ := http.NewRequest("PUT", "/todos/"+randomUUID, bytes.NewBuffer(jsonValue))
+
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+}
+
+func TestDeleteTodo(t *testing.T) {
+	t.Run("It should return 400 if todo id is not uuid", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", "/todos/123", nil)
+
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("It should delete todo", func(t *testing.T) {
+		todo := testData[0]
+
+		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID, nil)
+
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("It should return 404 if todo doesnt exist", func(t *testing.T) {
+		randomUUID := uuid.New().String()
+
+		req, _ := http.NewRequest("DELETE", "/todos/"+randomUUID, nil)
 
 		w := httptest.NewRecorder()
 

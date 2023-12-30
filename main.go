@@ -121,6 +121,7 @@ func main() {
 	router.POST("/todos", api.CreateTodo(db, logger))
 	router.GET("/todos/:id", api.GetTodoByID(db, logger))
 	router.PUT("/todos/:id", api.UpdateTodo(db, logger))
+	router.DELETE("/todos/:id", api.DeleteTodo(db, logger))
 
 	if err := router.Run("localhost:8080"); err != nil {
 		logger.WithFields(logrus.Fields{
