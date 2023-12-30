@@ -70,7 +70,7 @@ func GetTodos(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 	}
 }
 
-func PostTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
+func CreateTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input types.TodoInput
 		eventKey := "todo_create"

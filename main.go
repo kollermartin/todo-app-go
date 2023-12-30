@@ -118,7 +118,7 @@ func main() {
 	defer db.Close()
 
 	router.GET("/todos", api.GetTodos(db, logger))
-	router.POST("/todos", api.PostTodo(db, logger))
+	router.POST("/todos", api.CreateTodo(db, logger))
 	router.GET("/todos/:id", api.GetTodoByID(db, logger))
 	router.PUT("/todos/:id", api.UpdateTodo(db, logger))
 
