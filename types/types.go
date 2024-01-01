@@ -15,6 +15,13 @@ type Config struct {
 }
 
 type Todo struct {
+	ID         int       `json:"id"`
+	ExternalID string    `json:"external_id"`
+	Title      string    `json:"title"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type TodoResponse struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`

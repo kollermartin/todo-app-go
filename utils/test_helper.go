@@ -31,7 +31,7 @@ func SeedDB(db *sql.DB, testData []types.Todo) error {
 	}
 
 	for _, todo := range testData {
-		_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", todo.ID, todo.Title, todo.CreatedAt)
+		_, err := db.Exec("INSERT INTO todos (external_id, title, created_at) VALUES ($1, $2, $3)", todo.ExternalID, todo.Title, todo.CreatedAt)
 
 		if err != nil {
 			return err

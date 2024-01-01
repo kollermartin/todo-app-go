@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"todo-app/types"
+	"todo-app/utils"
 )
 
 func isValidUUID(id string) bool {
@@ -38,7 +39,7 @@ func GetTodos(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 		eventErrorKey := "todo_get_all_fail"
 		eventKey := "todo_get_all"
 
-		rows, err := db.Query("SELECT id, title, created_at FROM todos")
+		rows, err := db.Query("SELECT * FROM todos")
 
 		if err != nil {
 
@@ -49,16 +50,16 @@ func GetTodos(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 
 		defer rows.Close()
 
-		todos := []types.Todo{}
+		todos := []types.TodoResponse{}
 		for rows.Next() {
 			var todo types.Todo
-			if err := rows.Scan(&todo.ID, &todo.Title, &todo.CreatedAt); err != nil {
+			if err := rows.Scan(&todo.ID, &todo.ExternalID, &todo.Title, &todo.CreatedAt); err != nil {
 				logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), nil)
 
 				return
 			}
 
-			todos = append(todos, todo)
+			todos = append(todos, *utils.MapTodoResponse(&todo))
 		}
 
 		log.WithFields(logrus.Fields{
@@ -84,26 +85,26 @@ func CreateTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 		}
 
 		newTodo := types.Todo{
-			ID:        uuid.New().String(),
-			Title:     input.Title,
-			CreatedAt: time.Now(),
+			ExternalID: uuid.New().String(),
+			Title:      input.Title,
+			CreatedAt:  time.Now(),
 		}
 
-		_, err := db.Exec("INSERT INTO todos (id, title, created_at) VALUES ($1, $2, $3)", newTodo.ID, newTodo.Title, newTodo.CreatedAt)
+		err := db.QueryRow("INSERT INTO todos (external_id, title, created_at) VALUES ($1, $2, $3) RETURNING id", newTodo.ExternalID, newTodo.Title, newTodo.CreatedAt).Scan(&newTodo.ID)
 
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": newTodo.ID})
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": newTodo.ExternalID})
 
 			return
 		}
 
 		log.WithFields(logrus.Fields{
-			"event":   eventKey,
-			"id":      newTodo.ID,
-			"handler": c.HandlerName(),
+			"event":       eventKey,
+			"external_id": newTodo.ExternalID,
+			"handler":     c.HandlerName(),
 		}).Info("Created new todo")
 
-		c.IndentedJSON(http.StatusCreated, newTodo)
+		c.IndentedJSON(http.StatusCreated, utils.MapTodoResponse(&newTodo))
 
 	}
 }
@@ -122,18 +123,18 @@ func GetTodoByID(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 			return
 		}
 
-		err := db.QueryRow("SELECT * from todos where id = $1", id).Scan(&todo.ID, &todo.Title, &todo.CreatedAt)
+		err := db.QueryRow("SELECT * from todos where external_id = $1", id).Scan(&todo.ID, &todo.ExternalID, &todo.Title, &todo.CreatedAt)
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"id": id})
+				logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"external_id": id})
 			} else {
-				logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+				logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 			}
 			return
 		}
 
-		c.IndentedJSON(http.StatusOK, todo)
+		c.IndentedJSON(http.StatusOK, utils.MapTodoResponse(&todo))
 	}
 }
 
@@ -154,46 +155,46 @@ func UpdateTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 		}
 
 		if err := c.ShouldBindJSON(&todoInput); err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, err.Error(), logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
-		result, err := db.Exec("UPDATE todos SET title = $1 WHERE id = $2", todoInput.Title, id)
+		result, err := db.Exec("UPDATE todos SET title = $1 WHERE external_id = $2", todoInput.Title, id)
 
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
 		if rowsAffected == 0 {
-			logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"external_id": id})
 
 			return
 		}
 
-		err = db.QueryRow("SELECT * from todos where id = $1", id).Scan(&updatedTodo.ID, &updatedTodo.Title, &updatedTodo.CreatedAt)
+		err = db.QueryRow("SELECT * from todos where external_id = $1", id).Scan(&updatedTodo.ID, &updatedTodo.ExternalID, &updatedTodo.Title, &updatedTodo.CreatedAt)
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
 		log.WithFields(logrus.Fields{
-			"event":   eventKey,
-			"id":      id,
-			"handler": c.HandlerName(),
+			"event":       eventKey,
+			"external_id": id,
+			"handler":     c.HandlerName(),
 		}).Info("Updated todo")
 
-		c.IndentedJSON(http.StatusOK, updatedTodo)
+		c.IndentedJSON(http.StatusOK, utils.MapTodoResponse(&updatedTodo))
 	}
 }
 
@@ -210,31 +211,31 @@ func DeleteTodo(db *sql.DB, log *logrus.Logger) gin.HandlerFunc {
 			return
 		}
 
-		result, err := db.Exec("DELETE FROM todos WHERE id = $1", id)
+		result, err := db.Exec("DELETE FROM todos WHERE external_id = $1", id)
 
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
 		if rowsAffected == 0 {
-			logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"id": id})
+			logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, "Todo not found", logrus.Fields{"external_id": id})
 
 			return
 		}
 
 		log.WithFields(logrus.Fields{
-			"event":   eventKey,
-			"id":      id,
-			"handler": c.HandlerName(),
+			"event":       eventKey,
+			"external_id": id,
+			"handler":     c.HandlerName(),
 		}).Info("Deleted todo")
 
 		c.Status(http.StatusNoContent)

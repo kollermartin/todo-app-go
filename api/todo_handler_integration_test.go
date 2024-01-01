@@ -23,16 +23,16 @@ var (
 	log      *logrus.Logger
 	router   *gin.Engine
 	testData = []types.Todo{
-		{ID: "2233a6b2-ae99-40fc-bdd7-db49834993ab", Title: "Task 1", CreatedAt: time.Date(2023, 12, 29, 18, 26, 45, 0, time.UTC)},
-		{ID: "1c15f5f7-3207-4d4a-b50f-f6f8bacfb0e9", Title: "Task 2", CreatedAt: time.Date(2023, 12, 29, 18, 25, 18, 0, time.UTC)},
-		{ID: "4ffaaf6e-6693-45a4-b1d2-02da81bebc46", Title: "Task 3", CreatedAt: time.Date(2023, 12, 29, 18, 32, 19, 0, time.UTC)},
-		{ID: "6e6a468c-bb56-4d11-ab57-b91c46501ae7", Title: "Task 4", CreatedAt: time.Date(2023, 12, 29, 18, 16, 29, 0, time.UTC)},
-		{ID: "1c5b7f6f-ee0b-4e48-b246-c8206d1dccc2", Title: "Task 5", CreatedAt: time.Date(2023, 12, 29, 18, 13, 57, 0, time.UTC)},
-		{ID: "0c3cd173-ec71-42f8-a191-49bf5613f3f0", Title: "Task 6", CreatedAt: time.Date(2023, 12, 29, 18, 37, 1, 0, time.UTC)},
-		{ID: "71757bd0-21fe-44f0-8768-4be10fd2e8e5", Title: "Task 7", CreatedAt: time.Date(2023, 12, 29, 18, 30, 40, 0, time.UTC)},
-		{ID: "2ea5cc31-fe70-444c-887d-b48a22d8f265", Title: "Task 8", CreatedAt: time.Date(2023, 12, 29, 18, 29, 22, 0, time.UTC)},
-		{ID: "597b2371-bd2a-48cc-8c25-e018a37803f4", Title: "Task 9", CreatedAt: time.Date(2023, 12, 29, 18, 14, 28, 0, time.UTC)},
-		{ID: "400e27ed-32ff-4e3a-b6e7-0e0c09a0c121", Title: "Task 10", CreatedAt: time.Date(2023, 12, 29, 18, 6, 58, 0, time.UTC)},
+		{ID: 1, ExternalID: "2233a6b2-ae99-40fc-bdd7-db49834993ab", Title: "Task 1", CreatedAt: time.Date(2023, 12, 29, 18, 26, 45, 0, time.UTC)},
+		{ID: 2, ExternalID: "1c15f5f7-3207-4d4a-b50f-f6f8bacfb0e9", Title: "Task 2", CreatedAt: time.Date(2023, 12, 29, 18, 25, 18, 0, time.UTC)},
+		{ID: 3, ExternalID: "4ffaaf6e-6693-45a4-b1d2-02da81bebc46", Title: "Task 3", CreatedAt: time.Date(2023, 12, 29, 18, 32, 19, 0, time.UTC)},
+		{ID: 4, ExternalID: "6e6a468c-bb56-4d11-ab57-b91c46501ae7", Title: "Task 4", CreatedAt: time.Date(2023, 12, 29, 18, 16, 29, 0, time.UTC)},
+		{ID: 5, ExternalID: "1c5b7f6f-ee0b-4e48-b246-c8206d1dccc2", Title: "Task 5", CreatedAt: time.Date(2023, 12, 29, 18, 13, 57, 0, time.UTC)},
+		{ID: 6, ExternalID: "0c3cd173-ec71-42f8-a191-49bf5613f3f0", Title: "Task 6", CreatedAt: time.Date(2023, 12, 29, 18, 37, 1, 0, time.UTC)},
+		{ID: 7, ExternalID: "71757bd0-21fe-44f0-8768-4be10fd2e8e5", Title: "Task 7", CreatedAt: time.Date(2023, 12, 29, 18, 30, 40, 0, time.UTC)},
+		{ID: 8, ExternalID: "2ea5cc31-fe70-444c-887d-b48a22d8f265", Title: "Task 8", CreatedAt: time.Date(2023, 12, 29, 18, 29, 22, 0, time.UTC)},
+		{ID: 9, ExternalID: "597b2371-bd2a-48cc-8c25-e018a37803f4", Title: "Task 9", CreatedAt: time.Date(2023, 12, 29, 18, 14, 28, 0, time.UTC)},
+		{ID: 10, ExternalID: "400e27ed-32ff-4e3a-b6e7-0e0c09a0c121", Title: "Task 10", CreatedAt: time.Date(2023, 12, 29, 18, 6, 58, 0, time.UTC)},
 	}
 )
 
@@ -55,7 +55,7 @@ func TestGetTodos(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	t.Run("It should get all todos", func(t *testing.T) {
-		var todos []types.Todo
+		var todos []types.TodoResponse
 		err := json.Unmarshal(w.Body.Bytes(), &todos)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response body: %v", err)
@@ -68,7 +68,7 @@ func TestGetTodos(t *testing.T) {
 
 func TestGetTodoByID(t *testing.T) {
 	t.Run("It should return todo by id", func(t *testing.T) {
-		todo := testData[0]
+		todo := *utils.MapTodoResponse(&testData[0])
 
 		req, _ := http.NewRequest("GET", "/todos/"+todo.ID, nil)
 
@@ -76,7 +76,7 @@ func TestGetTodoByID(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 
-		var todoResponse types.Todo
+		var todoResponse types.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -127,7 +127,7 @@ func TestCreateTodo(t *testing.T) {
 
 		assert.Equal(t, 201, w.Code)
 
-		var todoResponse types.Todo
+		var todoResponse types.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -169,7 +169,7 @@ func TestUpdateTodo(t *testing.T) {
 	})
 
 	t.Run("It should update todo", func(t *testing.T) {
-		todo := testData[0]
+		todo := *utils.MapTodoResponse(&testData[0])
 
 		todoInput := types.TodoInput{
 			Title: "Updated task",
@@ -183,7 +183,7 @@ func TestUpdateTodo(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 
-		var todoResponse types.Todo
+		var todoResponse types.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -225,7 +225,7 @@ func TestDeleteTodo(t *testing.T) {
 	})
 
 	t.Run("It should delete todo", func(t *testing.T) {
-		todo := testData[0]
+		todo := *utils.MapTodoResponse(&testData[0])
 
 		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID, nil)
 
