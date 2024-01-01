@@ -1,31 +1,15 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-
-	"github.com/gin-gonic/gin"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-
-	"todo-app/api"
-	"todo-app/middlewares"
+	"todo-app/router"
 	"todo-app/types"
+	"todo-app/config"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
-
-func initRouter(logger *logrus.Logger) *gin.Engine {
-	router := gin.New()
-
-	router.Use(gin.Recovery())
-	router.Use(middlewares.LoggerMiddleware(logger))
-
-	return router
-}
 
 func loadConfig(path string) (config types.Config, err error) {
 	viper.AddConfigPath(path)
@@ -51,51 +35,10 @@ func initLogger() *logrus.Logger {
 	return logger
 }
 
-func runMigrations(db *sql.DB, migrationsPath string) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-
-	if err != nil {
-		return err
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+migrationsPath,
-		"postgres", driver,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return err
-	}
-
-	return nil
-}
-
-func initDB(config types.Config, cString string) (*sql.DB, error) {
-	db, err := sql.Open(config.DBType, cString)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
-
-	if err := runMigrations(db, config.MigrationsPath); err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
 func main() {
 	logger := initLogger()
-	router := initRouter(logger)
 
-	config, err := loadConfig(".")
+	env, err := loadConfig(".")
 
 	if err != nil {
 		logger.WithFields(logrus.Fields{
@@ -104,24 +47,12 @@ func main() {
 		}).Fatal("Failed to load config")
 	}
 
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
-
-	db, err := initDB(config, connStr)
-
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"event": "db_init_fail",
-			"error": err.Error(),
-		}).Fatal("Failed to initialize database")
-	}
+	db := config.ConnectToDB(env, logger)
 
 	defer db.Close()
 
-	router.GET("/todos", api.GetTodos(db, logger))
-	router.POST("/todos", api.CreateTodo(db, logger))
-	router.GET("/todos/:id", api.GetTodoByID(db, logger))
-	router.PUT("/todos/:id", api.UpdateTodo(db, logger))
-	router.DELETE("/todos/:id", api.DeleteTodo(db, logger))
+	// TODO Zbavit se zavislosti db, logger
+	router := router.Init(db, logger)
 
 	if err := router.Run("localhost:8080"); err != nil {
 		logger.WithFields(logrus.Fields{
