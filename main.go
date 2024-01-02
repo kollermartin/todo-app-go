@@ -1,11 +1,13 @@
 package main
 
 import (
+	"todo-app/config"
+	"todo-app/router"
+	"todo-app/service"
+	"todo-app/types"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"todo-app/router"
-	"todo-app/types"
-	"todo-app/config"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
@@ -48,11 +50,12 @@ func main() {
 	}
 
 	db := config.ConnectToDB(env, logger)
+	todoService := service.NewTodoService(db)
 
 	defer db.Close()
 
 	// TODO Zbavit se zavislosti db, logger
-	router := router.Init(db, logger)
+	router := router.Init(todoService, logger)
 
 	if err := router.Run("localhost:8080"); err != nil {
 		logger.WithFields(logrus.Fields{

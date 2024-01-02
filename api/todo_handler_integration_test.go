@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"todo-app/service"
 	"todo-app/types"
 	"todo-app/utils"
 
@@ -39,12 +40,13 @@ var (
 func setupRouter() {
 	router = gin.Default()
 	log = logrus.New()
+	todoService := service.NewTodoService(db) // Create an instance of TodoService
 
-	router.GET("/todos", GetTodos(db, log))
-	router.GET("/todos/:id", GetTodoByID(db, log))
-	router.POST("/todos", CreateTodo(db, log))
-	router.PUT("/todos/:id", UpdateTodo(db, log))
-	router.DELETE("/todos/:id", DeleteTodo(db, log))
+	router.GET("/todos", GetTodos(todoService, log))
+	router.GET("/todos/:id", GetTodoByID(todoService, log))
+	router.POST("/todos", CreateTodo(todoService, log))
+	router.PUT("/todos/:id", UpdateTodo(todoService, log))
+	router.DELETE("/todos/:id", DeleteTodo(todoService, log))
 
 }
 
@@ -251,6 +253,8 @@ func TestDeleteTodo(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	testDB, error := utils.CreateTestDB(testData)
+
+	// TODO FIX TESTS
 
 	if error != nil {
 		panic(error.Error())

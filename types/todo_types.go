@@ -1,6 +1,8 @@
 package types
 
-import "time"
+import (
+	"time"
+)
 
 type Config struct {
 	Env            string `mapstructure:"ENV"`

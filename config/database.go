@@ -14,7 +14,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ConnectToDB(config types.Config, log *logrus.Logger) (*sql.DB) {
+func ConnectToDB(config types.Config, log *logrus.Logger) *sql.DB {
 	cnt := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
 
 	db, err := sql.Open(config.DBType, cnt)
