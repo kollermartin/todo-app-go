@@ -1,6 +1,6 @@
 package utils
 
-import "todo-app/types"
+import "todo-app/app/types"
 
 func MapTodoResponse(todo *types.Todo) *types.TodoResponse {
 	return &types.TodoResponse{

@@ -1,9 +1,9 @@
 package router
 
 import (
-	"todo-app/api"
-	"todo-app/middlewares"
-	"todo-app/service"
+	"todo-app/app/api"
+	"todo-app/app/middlewares"
+	"todo-app/app/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

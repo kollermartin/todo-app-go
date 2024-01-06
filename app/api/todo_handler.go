@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 
-	"todo-app/service"
-	"todo-app/types"
-	"todo-app/utils"
+	"todo-app/app/service"
+	"todo-app/app/types"
+	"todo-app/app/utils"
 )
 
 func isValidUUID(id string) bool {
@@ -155,7 +155,7 @@ func UpdateTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFun
 	}
 }
 
-func DeleteTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
+func DeleteTodo(todoService *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		eventKey := "todo_delete"
 		eventErrorKey := "todo_delete_fail"
@@ -168,9 +168,19 @@ func DeleteTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFun
 			return
 		}
 
-		err := service.DeleteTodo(id)
+		err := todoService.DeleteTodo(id)
+
 
 		if err != nil {
+			// if todoErr, ok := err.(service.TodoError); ok {
+			// 	if todoErr.Reason == service.ReasonNotFound {
+			// 		logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
+			// 		return
+			// 	}
+			// 	logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
+			// 	return
+			// }
+
 			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return

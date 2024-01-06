@@ -2,9 +2,9 @@ package main
 
 import (
 	"todo-app/config"
-	"todo-app/router"
-	"todo-app/service"
-	"todo-app/types"
+	"todo-app/app/router"
+	"todo-app/app/service"
+	"todo-app/app/types"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"

@@ -9,9 +9,9 @@ import (
 	"os"
 	"testing"
 	"time"
-	"todo-app/service"
-	"todo-app/types"
-	"todo-app/utils"
+	"todo-app/app/service"
+	"todo-app/app/types"
+	"todo-app/app/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

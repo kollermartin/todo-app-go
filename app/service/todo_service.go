@@ -2,8 +2,10 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
-	"todo-app/types"
+
+	"todo-app/app/types"
 
 	"github.com/google/uuid"
 )
@@ -11,6 +13,22 @@ import (
 type TodoService struct {
 	DB *sql.DB
 }
+
+// type TodoError struct {
+// 	Message string
+// 	Reason  TodoErrorReason
+// }
+
+// type TodoErrorReason int
+
+// const (
+// 	ReasonNotFound TodoErrorReason = iota
+// 	ReasonUnknown
+// )
+
+// func (e TodoError) Error() string {
+// 	return e.Message
+// }
 
 func NewTodoService(db *sql.DB) *TodoService {
 	return &TodoService{
@@ -97,20 +115,20 @@ func (service *TodoService) UpdateTodo(id string, title string) (*types.Todo, er
 }
 
 func (service *TodoService) DeleteTodo(id string) error {
-	result, err := service.DB.Exec("DELETE FROM todos WHERE external_id = $1", id)
+	// result, err := service.DB.Exec("DELETE FROM todos WHERE external_id = $1", id)
 
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return TodoError{Message: err.Error(), Reason: ReasonUnknown}
+	// }
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
+	// rowsAffected, err := result.RowsAffected()
+	// if err != nil {
+	// 	return TodoError{Message: err.Error(), Reason: ReasonUnknown}
+	// }
 
-	if rowsAffected == 0 {
-		return err
-	}
+	// if rowsAffected == 0 {
+	// 	return TodoError{Message: fmt.Sprintf("Todo with id %s not found", id), Reason: ReasonNotFound}
+	// }
 
 	return nil
 }

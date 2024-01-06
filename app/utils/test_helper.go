@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-	"todo-app/types"
+	
+	"todo-app/app/types"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/golang-migrate/migrate/v4"
