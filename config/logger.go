@@ -7,4 +7,5 @@ import (
 func InitLogger() {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetLevel(logrus.InfoLevel)
+	logrus.SetReportCaller(true)
 }
