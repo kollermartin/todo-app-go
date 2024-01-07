@@ -18,7 +18,7 @@ func isValidUUID(id string) bool {
 	return err == nil
 }
 
-func logAndRespondError(log *logrus.Logger, c *gin.Context, eventKey string, httpStatus int, errMsg string, extraFields logrus.Fields) {
+func logAndRespondError(c *gin.Context, eventKey string, httpStatus int, errMsg string, extraFields logrus.Fields) {
 	logFields := logrus.Fields{
 		"event":   eventKey,
 		"handler": c.HandlerName(),
@@ -28,12 +28,12 @@ func logAndRespondError(log *logrus.Logger, c *gin.Context, eventKey string, htt
 		logFields[k] = v
 	}
 
-	log.WithFields(logFields).Error(errMsg)
+	logrus.WithFields(logFields).Error(errMsg)
 
 	c.AbortWithStatusJSON(httpStatus, gin.H{"message": errMsg})
 }
 
-func GetTodos(todoService *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
+func GetTodos(todoService *service.TodoService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		eventErrorKey := "todo_get_all_fail"
 		eventKey := "todo_get_all"
@@ -42,13 +42,13 @@ func GetTodos(todoService *service.TodoService, log *logrus.Logger) gin.HandlerF
 		if err != nil {
 			if todoErr, ok := err.(service.TodoError); ok {
 				if todoErr.Reason == service.ReasonUnknown {
-					logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, nil)
+					logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, nil)
 
 					return
 				}
 			}
 
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), nil)
+			logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, err.Error(), nil)
 
 			return
 		}
@@ -59,7 +59,7 @@ func GetTodos(todoService *service.TodoService, log *logrus.Logger) gin.HandlerF
 			mappedTodos[i] = *utils.MapTodoResponse(&td)
 		}
 
-		log.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"event":   eventKey,
 			"handler": c.HandlerName(),
 		}).Info("Get all todos")
@@ -68,7 +68,7 @@ func GetTodos(todoService *service.TodoService, log *logrus.Logger) gin.HandlerF
 	}
 }
 
-func CreateTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
+func CreateTodo(service *service.TodoService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input types.TodoInput
 		eventKey := "todo_create"
@@ -76,7 +76,7 @@ func CreateTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFun
 
 		if err := c.ShouldBindJSON(&input); err != nil {
 
-			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, err.Error(), nil)
+			logAndRespondError(c, eventErrorKey, http.StatusBadRequest, err.Error(), nil)
 
 			return
 		}
@@ -84,12 +84,12 @@ func CreateTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFun
 		newTodo, err := service.CreateTodo(input.Title)
 
 		if err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), nil)
+			logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, err.Error(), nil)
 
 			return
 		}
 
-		log.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"event":       eventKey,
 			"external_id": newTodo.ExternalID,
 			"handler":     c.HandlerName(),
@@ -99,14 +99,14 @@ func CreateTodo(service *service.TodoService, log *logrus.Logger) gin.HandlerFun
 	}
 }
 
-func GetTodoByID(todoService *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
+func GetTodoByID(todoService *service.TodoService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		eventErrorKey := "todo_get_fail"
 
 		id := c.Param("id")
 
 		if !isValidUUID(id) {
-			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
+			logAndRespondError(c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
 
 			return
 		}
@@ -117,15 +117,15 @@ func GetTodoByID(todoService *service.TodoService, log *logrus.Logger) gin.Handl
 			if todoErr, ok := err.(service.TodoError); ok {
 				switch todoErr.Reason {
 				case service.ReasonNotFound:
-					logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
+					logAndRespondError(c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
 				case service.ReasonUnknown:
-					logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
+					logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
 				}
 
 				return
 			}
 
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
+			logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
@@ -134,7 +134,7 @@ func GetTodoByID(todoService *service.TodoService, log *logrus.Logger) gin.Handl
 	}
 }
 
-func UpdateTodo(todoService *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
+func UpdateTodo(todoService *service.TodoService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var todoInput types.TodoInput
 
@@ -144,13 +144,13 @@ func UpdateTodo(todoService *service.TodoService, log *logrus.Logger) gin.Handle
 		id := c.Param("id")
 
 		if !isValidUUID(id) {
-			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
+			logAndRespondError(c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
 
 			return
 		}
 
 		if err := c.ShouldBindJSON(&todoInput); err != nil {
-			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, err.Error(), logrus.Fields{"external_id": id})
+			logAndRespondError(c, eventErrorKey, http.StatusBadRequest, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
@@ -161,20 +161,20 @@ func UpdateTodo(todoService *service.TodoService, log *logrus.Logger) gin.Handle
 			if todoErr, ok := err.(service.TodoError); ok {
 				switch todoErr.Reason {
 				case service.ReasonNotFound:
-					logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
+					logAndRespondError(c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
 				case service.ReasonUnknown:
-					logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
+					logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
 				}
 
 				return
 			}
 
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
+			logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
-		log.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"event":       eventKey,
 			"external_id": id,
 			"handler":     c.HandlerName(),
@@ -184,7 +184,7 @@ func UpdateTodo(todoService *service.TodoService, log *logrus.Logger) gin.Handle
 	}
 }
 
-func DeleteTodo(todoService *service.TodoService, log *logrus.Logger) gin.HandlerFunc {
+func DeleteTodo(todoService *service.TodoService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		eventKey := "todo_delete"
 		eventErrorKey := "todo_delete_fail"
@@ -192,7 +192,7 @@ func DeleteTodo(todoService *service.TodoService, log *logrus.Logger) gin.Handle
 		id := c.Param("id")
 
 		if !isValidUUID(id) {
-			logAndRespondError(log, c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
+			logAndRespondError(c, eventErrorKey, http.StatusBadRequest, "Invalid ID", nil)
 
 			return
 		}
@@ -203,20 +203,20 @@ func DeleteTodo(todoService *service.TodoService, log *logrus.Logger) gin.Handle
 			if todoErr, ok := err.(service.TodoError); ok {
 				switch todoErr.Reason {
 				case service.ReasonNotFound:
-					logAndRespondError(log, c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
+					logAndRespondError(c, eventErrorKey, http.StatusNotFound, todoErr.Message, logrus.Fields{"external_id": id})
 				case service.ReasonUnknown:
-					logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
+					logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, todoErr.Message, logrus.Fields{"external_id": id})
 				}
 
 				return
 			}
 
-			logAndRespondError(log, c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
+			logAndRespondError(c, eventErrorKey, http.StatusInternalServerError, err.Error(), logrus.Fields{"external_id": id})
 
 			return
 		}
 
-		log.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"event":       eventKey,
 			"external_id": id,
 			"handler":     c.HandlerName(),

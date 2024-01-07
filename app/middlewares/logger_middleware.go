@@ -7,13 +7,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
+func LoggerMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
 
 		c.Next()
 
-		logger.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"method":  c.Request.Method,
 			"path":    c.Request.RequestURI,
 			"status":  c.Writer.Status(),

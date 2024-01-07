@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"todo-app/app/types"
 
@@ -14,26 +14,26 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ConnectToDB(config types.Config, log *logrus.Logger) *sql.DB {
+func ConnectToDB(config types.Config) *sql.DB {
 	cnt := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
 
 	db, err := sql.Open(config.DBType, cnt)
 	if err != nil {
-		log.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"event": "db_init_fail",
 			"error": err.Error(),
 		}).Fatal("Failed to initialize database")
 	}
 
 	if err = db.Ping(); err != nil {
-		log.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"event": "db_init_fail",
 			"error": err.Error(),
 		}).Fatal("Failed to ping database")
 	}
 
 	if err := runMigrations(db, config.MigrationsPath); err != nil {
-		log.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"event": "db_migrations_fail",
 			"error": err.Error(),
 		}).Fatal("Failed to run migrations")

@@ -42,11 +42,11 @@ func setupRouter() {
 	log = logrus.New()
 	todoService := service.NewTodoService(db) // Create an instance of TodoService
 
-	router.GET("/todos", GetTodos(todoService, log))
-	router.GET("/todos/:id", GetTodoByID(todoService, log))
-	router.POST("/todos", CreateTodo(todoService, log))
-	router.PUT("/todos/:id", UpdateTodo(todoService, log))
-	router.DELETE("/todos/:id", DeleteTodo(todoService, log))
+	router.GET("/todos", GetTodos(todoService))
+	router.GET("/todos/:id", GetTodoByID(todoService))
+	router.POST("/todos", CreateTodo(todoService))
+	router.PUT("/todos/:id", UpdateTodo(todoService))
+	router.DELETE("/todos/:id", DeleteTodo(todoService))
 
 }
 

@@ -29,36 +29,28 @@ func loadConfig(path string) (config types.Config, err error) {
 	return config, err
 }
 
-func initLogger() *logrus.Logger {
-	logger := logrus.New()
-	logger.Formatter = new(logrus.JSONFormatter)
-	logger.Level = logrus.InfoLevel
-
-	return logger
-}
-
 func main() {
-	logger := initLogger()
+	config.InitLogger()
 
 	env, err := loadConfig(".")
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"event": "config_load_fail",
 			"error": err.Error(),
 		}).Fatal("Failed to load config")
 	}
 
-	db := config.ConnectToDB(env, logger)
+	db := config.ConnectToDB(env)
 	todoService := service.NewTodoService(db)
 
 	defer db.Close()
 
 	// TODO Zbavit se zavislosti db, logger
-	router := router.Init(todoService, logger)
+	router := router.Init(todoService)
 
 	if err := router.Run("localhost:8080"); err != nil {
-		logger.WithFields(logrus.Fields{
+		logrus.WithFields(logrus.Fields{
 			"event": "server_run_fail",
 			"error": err.Error(),
 		}).Fatal("Failed to run server")
