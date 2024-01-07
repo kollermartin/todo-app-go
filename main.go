@@ -4,35 +4,17 @@ import (
 	"todo-app/config"
 	"todo-app/app/router"
 	"todo-app/app/service"
-	"todo-app/app/types"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
-func loadConfig(path string) (config types.Config, err error) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName(".env")
-	viper.SetConfigType("env")
-
-	if err = viper.ReadInConfig(); err != nil {
-		return types.Config{}, err
-	}
-
-	if err = viper.Unmarshal(&config); err != nil {
-		return types.Config{}, err
-	}
-
-	return config, err
-}
-
 func main() {
 	config.InitLogger()
 
-	env, err := loadConfig(".")
+	env, err := config.LoadConfig(".")
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -42,11 +24,11 @@ func main() {
 	}
 
 	db := config.ConnectToDB(env)
-	todoService := service.NewTodoService(db)
 
 	defer db.Close()
 
-	// TODO Zbavit se zavislosti db, logger
+	todoService := service.NewTodoService(db)
+
 	router := router.Init(todoService)
 
 	if err := router.Run("localhost:8080"); err != nil {
