@@ -1,9 +1,9 @@
 package main
 
 import (
-	"todo-app/config"
 	"todo-app/app/router"
 	"todo-app/app/service"
+	"todo-app/config"
 
 	"github.com/sirupsen/logrus"
 

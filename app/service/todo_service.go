@@ -80,23 +80,23 @@ func (service *TodoService) GetTodoByID(id string) (*types.Todo, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logrus.WithFields(logrus.Fields{
-				"event": constant.GetTodoLogEventErrorKey,
+				"event":       constant.GetTodoLogEventErrorKey,
 				"external_id": id,
 			}).Error(constant.DbIdNotFoundMsg)
 
-            return nil, TodoError{Message: fmt.Sprintf("Todo with id %s not found", id), Reason: ReasonNotFound}
-        }
+			return nil, TodoError{Message: fmt.Sprintf("Todo with id %s not found", id), Reason: ReasonNotFound}
+		}
 
 		logrus.WithFields(logrus.Fields{
-			"event": constant.GetTodoLogEventErrorKey,
+			"event":       constant.GetTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbQueryFailMsg)
 
-        return nil, TodoError{Message: constant.ErrMsgInternalServer, Reason: ReasonUnknown}
+		return nil, TodoError{Message: constant.ErrMsgInternalServer, Reason: ReasonUnknown}
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"event": constant.GetTodoLogEventKey,
+		"event":       constant.GetTodoLogEventKey,
 		"external_id": id,
 	}).Debug("Todo fetched successfully")
 
@@ -121,7 +121,7 @@ func (service *TodoService) CreateTodo(title string) (*types.Todo, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"event": constant.CreateTodoLogEventKey,
+		"event":       constant.CreateTodoLogEventKey,
 		"external_id": newTodo.ExternalID,
 	}).Info("Todo created successfully")
 
@@ -135,7 +135,7 @@ func (service *TodoService) UpdateTodo(id string, title string) (*types.Todo, er
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.UpdateTodoLogEventErrorKey,
+			"event":       constant.UpdateTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbExecFailMsg)
 
@@ -145,7 +145,7 @@ func (service *TodoService) UpdateTodo(id string, title string) (*types.Todo, er
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.UpdateTodoLogEventErrorKey,
+			"event":       constant.UpdateTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbRowsAffectedFailMsg)
 
@@ -154,7 +154,7 @@ func (service *TodoService) UpdateTodo(id string, title string) (*types.Todo, er
 
 	if rowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.UpdateTodoLogEventErrorKey,
+			"event":       constant.UpdateTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbIdNotFoundMsg)
 
@@ -164,7 +164,7 @@ func (service *TodoService) UpdateTodo(id string, title string) (*types.Todo, er
 	err = service.DB.QueryRow("SELECT * from todos where external_id = $1", id).Scan(&updatedTodo.ID, &updatedTodo.ExternalID, &updatedTodo.Title, &updatedTodo.CreatedAt)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.UpdateTodoLogEventErrorKey,
+			"event":       constant.UpdateTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbQueryFailMsg)
 
@@ -172,7 +172,7 @@ func (service *TodoService) UpdateTodo(id string, title string) (*types.Todo, er
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"event": constant.UpdateTodoLogEventKey,
+		"event":       constant.UpdateTodoLogEventKey,
 		"external_id": id,
 	}).Info("Todo updated successfully")
 
@@ -184,7 +184,7 @@ func (service *TodoService) DeleteTodo(id string) error {
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.DeleteTodoLogEventErrorKey,
+			"event":       constant.DeleteTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbExecFailMsg)
 
@@ -194,7 +194,7 @@ func (service *TodoService) DeleteTodo(id string) error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.DeleteTodoLogEventErrorKey,
+			"event":       constant.DeleteTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbRowsAffectedFailMsg)
 
@@ -203,7 +203,7 @@ func (service *TodoService) DeleteTodo(id string) error {
 
 	if rowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
-			"event": constant.DeleteTodoLogEventErrorKey,
+			"event":       constant.DeleteTodoLogEventErrorKey,
 			"external_id": id,
 		}).Error(constant.DbIdNotFoundMsg)
 
@@ -211,7 +211,7 @@ func (service *TodoService) DeleteTodo(id string) error {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"event": constant.DeleteTodoLogEventKey,
+		"event":       constant.DeleteTodoLogEventKey,
 		"external_id": id,
 	}).Info("Todo deleted successfully")
 
