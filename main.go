@@ -14,14 +14,7 @@ import (
 func main() {
 	config.InitLogger()
 
-	env, err := config.LoadConfig(".")
-
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"event": "config_load_fail",
-			"error": err.Error(),
-		}).Fatal("Failed to load config")
-	}
+	env := config.LoadConfig(".")
 
 	db := config.ConnectToDB(env)
 

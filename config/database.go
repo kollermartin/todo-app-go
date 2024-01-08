@@ -8,26 +8,27 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/sirupsen/logrus"
 
+	"todo-app/app/constant"
 	"todo-app/app/types"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
-func ConnectToDB(config types.Config) *sql.DB {
+func ConnectToDB(config *types.Config) *sql.DB {
 	cnt := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName)
 
 	db, err := sql.Open(config.DBType, cnt)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": "db_init_fail",
+			"event": constant.DbInitErrorEventKey,
 			"error": err.Error(),
 		}).Fatal("Failed to initialize database")
 	}
 
 	if err = db.Ping(); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"event": "db_init_fail",
+			"event": constant.DbInitErrorEventKey,
 			"error": err.Error(),
 		}).Fatal("Failed to ping database")
 	}

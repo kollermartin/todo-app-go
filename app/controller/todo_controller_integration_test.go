@@ -254,8 +254,6 @@ func TestDeleteTodo(t *testing.T) {
 func TestMain(m *testing.M) {
 	testDB, error := utils.CreateTestDB(testData)
 
-	// TODO FIX TESTS
-
 	if error != nil {
 		panic(error.Error())
 	}

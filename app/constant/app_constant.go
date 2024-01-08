@@ -8,7 +8,7 @@ const (
 	GetTodoLogEventErrorKey    string = "todo_get_fail"
 	GetTodoLogEventKey         string = "todo_get"
 	UpdateTodoLogEventKey      string = "todo_update"
-	UpdateTodoLogEventErrorKey        = "todo_update_fail"
+	UpdateTodoLogEventErrorKey string = "todo_update_fail"
 	DeleteTodoLogEventKey      string = "todo_delete"
 	DeleteTodoLogEventErrorKey string = "todo_delete_fail"
 	DbIdNotFoundMsg            string = "Id not found"
@@ -17,4 +17,6 @@ const (
 	DbRowsAffectedFailMsg      string = "Failed to get rows affected"
 	DbScanFailMsg              string = "Failed to scan database row"
 	ErrMsgInternalServer       string = "Internal server error"
+	ConfigLoadLogEventErrorKey string = "config_load_fail"
+	DbInitErrorEventKey        string = "db_init_fail"
 )
