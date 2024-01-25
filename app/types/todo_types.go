@@ -16,6 +16,7 @@ type Config struct {
 	MigrationsPath string `mapstructure:"MIGRATIONS_PATH"`
 }
 
+// Already in domain
 type Todo struct {
 	ID         int       `json:"id"`
 	ExternalID string    `json:"external_id"`
