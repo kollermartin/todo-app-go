@@ -35,7 +35,10 @@ func (ts *TodoService) GetTodo(ctx context.Context, uuid uuid.UUID) (*domain.Tod
 }
 
 func (ts *TodoService) CreateTodo (ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
-	todo, err := ts.repo.CreateTodo (ctx, todo)
+	todo.UUID = uuid.New()
+	
+	// TODO CreateTodo db should have set default for created_at and updated_at
+	todo, err := ts.repo.CreateTodo(ctx, todo)
 	if (err != nil) {
 		return nil, domain.ErrInternal
 	}
