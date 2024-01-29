@@ -12,8 +12,7 @@ func NewRouter(
 	router := gin.New()
 
 	router.Use(gin.Recovery())
-	//TODO add logger middleware
-	// router.Use(LoggerMiddleware())
+	router.Use(loggerMiddleware())
 
 	router.GET("/todos", todoHandler.GetAllTodos)
 	router.POST("/todos", todoHandler.CreateTodo)
