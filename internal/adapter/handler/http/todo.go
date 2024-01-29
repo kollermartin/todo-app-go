@@ -81,7 +81,7 @@ func (th *TodoHandler) CreateTodo(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, rsp)
 }
 
-func (th *TodoHandler) updateTodo(ctx *gin.Context) {
+func (th *TodoHandler) UpdateTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if id == "" {
@@ -118,7 +118,7 @@ func (th *TodoHandler) updateTodo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, rsp)
 }
 
-func (th *TodoHandler) deleteTodo(ctx *gin.Context) {
+func (th *TodoHandler) DeleteTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if id == "" {
