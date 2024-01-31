@@ -6,6 +6,7 @@ type App struct {
 	Name string
 	Env  string
 	Port string
+	MigrationsPath string
 }
 
 type Db struct {
@@ -37,6 +38,7 @@ func New() (*Config, error) {
 
 	app := &App{
 		Name: viper.GetString("APP_NAME"),
+		MigrationsPath: viper.GetString("APP_MIGRATIONS_PATH"),
 		Env:  viper.GetString("ENV"),
 		Port: viper.GetString("PORT"),
 	}

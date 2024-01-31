@@ -34,7 +34,7 @@ func New(ctx context.Context, config *config.Db) (*DB, error) {
 	}, nil
 }
 
-func (db *DB) Migrate() error {
+func (db *DB) Migrate(config *config.App) error {
 	driver, err := postgres.WithInstance(db.SqlDB, &postgres.Config{})
 
 	if err != nil {
@@ -42,7 +42,7 @@ func (db *DB) Migrate() error {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+"./migrations",
+		fmt.Sprintf("file://%s", config.MigrationsPath),
 		"postgres", driver,
 	)
 

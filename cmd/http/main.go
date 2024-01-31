@@ -24,7 +24,7 @@ func main() {
 
 	logger.Set()
 
-	logrus.Info("Starting the application", "app", config.App.Name, "env", config.App.Env)
+	logrus.Info("Starting the application", " app: ", config.App.Name, " env: ", config.App.Env)
 
 	ctx := context.Background()
 
@@ -35,9 +35,9 @@ func main() {
 
 	defer db.Close()
 
-	logrus.Info("Successfully connected to database", config.Db.Type)
+	logrus.Info("Successfully connected to database: ", config.Db.Type)
 
-	err = db.Migrate()
+	err = db.Migrate(config.App)
 	if err != nil {
 		logrus.Fatal("Error running migrations", err)
 	}
