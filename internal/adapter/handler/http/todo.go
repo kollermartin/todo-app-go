@@ -18,7 +18,7 @@ func NewTodoHandler(svc port.TodoService) *TodoHandler {
 }
 
 func (th *TodoHandler) GetAllTodos(ctx *gin.Context) {
-	var todoListRsp []TodoResponse
+	todoListRsp := []TodoResponse{}
 
 	todos, err := th.svc.GetAllTodos(ctx)
 	if err != nil {
