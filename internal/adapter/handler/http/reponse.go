@@ -17,6 +17,7 @@ type TodoResponse struct {
 	ID        uuid.UUID `json:"id"`
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewTodoResponse(todo *domain.Todo) TodoResponse {
@@ -24,6 +25,7 @@ func NewTodoResponse(todo *domain.Todo) TodoResponse {
 		ID:        todo.UUID,
 		Title:     todo.Title,
 		CreatedAt: todo.CreatedAt,
+		UpdatedAt: todo.UpdatedAt,
 	}
 }
 
