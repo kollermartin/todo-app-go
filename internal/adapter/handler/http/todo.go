@@ -132,7 +132,7 @@ func (th *TodoHandler) DeleteTodo(ctx *gin.Context) {
 		return
 	}
 
-	err = th.svc.DeleteTodo (ctx, parsedUUID)
+	err = th.svc.DeleteTodo(ctx, parsedUUID)
 	if err != nil {
 		HandleError(ctx, err)
 		return

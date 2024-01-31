@@ -41,24 +41,24 @@ func (tr *TodoRepository) GetAllTodos(ctx context.Context) ([]domain.Todo, error
 }
 
 func (tr *TodoRepository) GetTodo(ctx context.Context, uuid uuid.UUID) (*domain.Todo, error) {
-		var todo domain.Todo
-	
-		err := tr.db.SqlDB.QueryRow("SELECT * from todos where uuid = $1", uuid).Scan(&todo.ID, &todo.UUID, &todo.Title, &todo.CreatedAt, &todo.UpdatedAt)
-	
-		if err != nil {
-			if err == sql.ErrNoRows {
-				return nil, domain.ErrNotFound
-			}
+	var todo domain.Todo
 
-			return nil, err
+	err := tr.db.SqlDB.QueryRow("SELECT * from todos where uuid = $1", uuid).Scan(&todo.ID, &todo.UUID, &todo.Title, &todo.CreatedAt, &todo.UpdatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, domain.ErrNotFound
 		}
-	
-		return &todo, nil
+
+		return nil, err
+	}
+
+	return &todo, nil
 }
 
-func (tr *TodoRepository) CreateTodo (ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
+func (tr *TodoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
 	newTodo := domain.Todo{
-		Title:      todo.Title,
+		Title: todo.Title,
 	}
 
 	err := tr.db.SqlDB.QueryRow("INSERT INTO todos (title) VALUES ($1) RETURNING id, uuid, title, created_at, updated_at", newTodo.Title).Scan(&newTodo.ID, &newTodo.UUID, &newTodo.Title, &newTodo.CreatedAt, &newTodo.UpdatedAt)
@@ -70,7 +70,7 @@ func (tr *TodoRepository) CreateTodo (ctx context.Context, todo *domain.Todo) (*
 	return &newTodo, nil
 }
 
-func (tr *TodoRepository) UpdateTodo (ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
+func (tr *TodoRepository) UpdateTodo(ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
 	var updatedTodo domain.Todo
 
 	err := tr.db.SqlDB.QueryRow("UPDATE todos SET title = $1, updated_at = now() WHERE uuid = $2 RETURNING id, uuid, title, created_at, updated_at", todo.Title, todo.UUID).Scan(&updatedTodo.ID, &updatedTodo.UUID, &updatedTodo.Title, &updatedTodo.CreatedAt, &updatedTodo.UpdatedAt)
@@ -86,7 +86,7 @@ func (tr *TodoRepository) UpdateTodo (ctx context.Context, todo *domain.Todo) (*
 	return &updatedTodo, nil
 }
 
-func (tr *TodoRepository) DeleteTodo (ctx context.Context, uuid uuid.UUID) error {
+func (tr *TodoRepository) DeleteTodo(ctx context.Context, uuid uuid.UUID) error {
 	result, err := tr.db.SqlDB.Exec("DELETE FROM todos WHERE uuid = $1", uuid)
 
 	if err != nil {

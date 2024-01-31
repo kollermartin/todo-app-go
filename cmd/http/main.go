@@ -26,7 +26,7 @@ func main() {
 
 	logrus.Info("Starting the application", "app", config.App.Name, "env", config.App.Env)
 
-	ctx:= context.Background()
+	ctx := context.Background()
 
 	db, err := postgres.New(ctx, config.Db)
 	if err != nil {

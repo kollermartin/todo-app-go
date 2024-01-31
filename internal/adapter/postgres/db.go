@@ -42,7 +42,7 @@ func (db *DB) Migrate() error {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+ "./migrations",
+		"file://"+"./migrations",
 		"postgres", driver,
 	)
 

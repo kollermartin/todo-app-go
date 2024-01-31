@@ -14,15 +14,15 @@ var errorStatusMap = map[error]int{
 }
 
 type TodoResponse struct {
-	ID uuid.UUID `json:"id"`
-	Title string `json:"title"`
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 func NewTodoResponse(todo *domain.Todo) TodoResponse {
 	return TodoResponse{
-		ID: todo.UUID,
-		Title: todo.Title,
+		ID:        todo.UUID,
+		Title:     todo.Title,
 		CreatedAt: todo.CreatedAt,
 	}
 }

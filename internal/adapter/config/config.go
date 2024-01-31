@@ -23,8 +23,8 @@ type HTTP struct {
 }
 
 type Config struct {
-	App *App
-	Db  *Db
+	App  *App
+	Db   *Db
 	HTTP *HTTP
 }
 
@@ -41,7 +41,7 @@ func New() (*Config, error) {
 		Port: viper.GetString("PORT"),
 	}
 
-	db:= &Db{
+	db := &Db{
 		Host:     viper.GetString("DB_HOST"),
 		Port:     viper.GetString("DB_PORT"),
 		User:     viper.GetString("DB_USER"),
@@ -56,8 +56,8 @@ func New() (*Config, error) {
 	}
 
 	return &Config{
-		App: app,
-		Db:  db,
+		App:  app,
+		Db:   db,
 		HTTP: http,
 	}, nil
 }
