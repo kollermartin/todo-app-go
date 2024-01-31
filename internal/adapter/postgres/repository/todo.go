@@ -70,4 +70,37 @@ func (tr *TodoRepository) CreateTodo (ctx context.Context, todo *domain.Todo) (*
 	return &newTodo, nil
 }
 
-//TODO rest of the methods
+func (tr *TodoRepository) UpdateTodo (ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
+	var updatedTodo domain.Todo
+
+	err := tr.db.SqlDB.QueryRow("UPDATE todos SET title = $1, updated_at = now() WHERE uuid = $2 RETURNING id, uuid, title, created_at, updated_at", todo.Title, todo.UUID).Scan(&updatedTodo.ID, &updatedTodo.UUID, &updatedTodo.Title, &updatedTodo.CreatedAt, &updatedTodo.UpdatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, domain.ErrNotFound
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &updatedTodo, nil
+}
+
+func (tr *TodoRepository) DeleteTodo (ctx context.Context, uuid uuid.UUID) error {
+	result, err := tr.db.SqlDB.Exec("DELETE FROM todos WHERE uuid = $1", uuid)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
+}
