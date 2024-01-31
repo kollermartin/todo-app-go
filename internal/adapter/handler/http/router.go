@@ -22,3 +22,7 @@ func NewRouter(
 
 	return &Router{router}, nil
 }
+
+func (r *Router) Run(address string) error {
+	return r.Engine.Run(address)
+}

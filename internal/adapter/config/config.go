@@ -17,9 +17,15 @@ type Db struct {
 	Type     string
 }
 
+type HTTP struct {
+	URL  string
+	Port string
+}
+
 type Config struct {
 	App *App
 	Db  *Db
+	HTTP *HTTP
 }
 
 func New() (*Config, error) {
@@ -44,8 +50,14 @@ func New() (*Config, error) {
 		Type:     viper.GetString("DB_TYPE"),
 	}
 
+	http := &HTTP{
+		URL:  viper.GetString("HTTP_URL"),
+		Port: viper.GetString("HTTP_PORT"),
+	}
+
 	return &Config{
 		App: app,
 		Db:  db,
+		HTTP: http,
 	}, nil
 }

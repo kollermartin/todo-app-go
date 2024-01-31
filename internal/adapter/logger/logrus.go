@@ -1,10 +1,10 @@
-package config
+package logger
 
 import (
 	"github.com/sirupsen/logrus"
 )
 
-func InitLogger() {
+func Set() {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetReportCaller(true)

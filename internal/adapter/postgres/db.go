@@ -56,3 +56,7 @@ func (db *DB) Migrate() error {
 
 	return nil
 }
+
+func (db *DB) Close() {
+	db.SqlDB.Close()
+}
