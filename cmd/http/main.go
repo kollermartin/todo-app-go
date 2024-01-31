@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"todo-app/internal/adapter/config"
+	"todo-app/config"
 	"todo-app/internal/adapter/handler/http"
-	"todo-app/internal/adapter/logger"
 	"todo-app/internal/adapter/postgres"
 	"todo-app/internal/adapter/postgres/repository"
 	"todo-app/internal/core/service"
+	"todo-app/pkg/logger"
 
 	"github.com/sirupsen/logrus"
 
