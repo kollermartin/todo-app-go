@@ -11,6 +11,7 @@ import (
 
 var errorStatusMap = map[error]int{
 	domain.ErrInternal: http.StatusInternalServerError,
+	domain.ErrNotFound: http.StatusNotFound,
 }
 
 type TodoResponse struct {
