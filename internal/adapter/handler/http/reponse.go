@@ -11,7 +11,7 @@ import (
 
 var errorStatusMap = map[error]int{
 	domain.ErrInternal: http.StatusInternalServerError,
-	domain.ErrNotFound: http.StatusNotFound,
+	domain.ErrTicketNotFound: http.StatusNotFound,
 }
 
 type TodoResponse struct {
@@ -41,5 +41,17 @@ func HandleError(ctx *gin.Context, err error) {
 		statusCode = http.StatusInternalServerError
 	}
 
-	ctx.AbortWithStatusJSON(statusCode, gin.H{"message": err.Error()})
+	//TODO create UI errors
+
+	switch err {
+		case domain.ErrTicketNotFound:
+			ctx.AbortWithStatusJSON(statusCode, gin.H{"message": "Not Found"})
+			return
+		case domain.ErrInternal:
+			ctx.AbortWithStatusJSON(statusCode, gin.H{"message": "Internal Server Error"})
+			return
+		default:
+			ctx.AbortWithStatusJSON(statusCode, gin.H{"message": "Internal Server Error"})
+
+	}
 }
