@@ -1,11 +1,9 @@
-package todo
+package http
 
 import (
 	"net/http"
 	"todo-app/internal/domain/entity"
 	"todo-app/internal/domain/port"
-	"todo-app/internal/ui/http/request"
-	"todo-app/internal/ui/http/response"
 
 	// "todo-app/internal/domain/vo"
 
@@ -20,18 +18,18 @@ type TodoHandler struct {
 func NewTodoHandler(svc port.TodoService) *TodoHandler {
 	return &TodoHandler{svc}
 }
-//TODO Remove gin
+
 func (th *TodoHandler) GetAllTodos(ctx *gin.Context) {
-	todoListRsp := []response.TodoResponse{}
+	todoListRsp := []TodoResponse{}
 
 	todos, err := th.svc.GetAllTodos(ctx)
 	if err != nil {
-		response.HandleError(ctx, err)
+		HandleError(ctx, err)
 		return
 	}
 
 	for _, todo := range todos {
-		todoListRsp = append(todoListRsp, response.NewTodoResponse(&todo))
+		todoListRsp = append(todoListRsp, NewTodoResponse(&todo))
 	}
 
 	ctx.JSON(http.StatusOK, todoListRsp)
@@ -41,32 +39,32 @@ func (th *TodoHandler) GetTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if id == "" {
-		response.HandleValidationError(ctx, "ID is required")
+		HandleValidationError(ctx, "ID is required")
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
-		response.HandleValidationError(ctx, "Invalid ID")
+		HandleValidationError(ctx, "Invalid ID")
 		return
 	}
 
 	todo, err := th.svc.GetTodo(ctx, parsedUUID)
 	if err != nil {
-		response.HandleError(ctx, err)
+		HandleError(ctx, err)
 		return
 	}
 
-	rsp := response.NewTodoResponse(todo)
+	rsp := NewTodoResponse(todo)
 
 	ctx.JSON(http.StatusOK, rsp)
 }
 
 func (th *TodoHandler) CreateTodo(ctx *gin.Context) {
-	var req request.CreateRequest
+	var req CreateRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(ctx, err.Error())
+		HandleValidationError(ctx, err.Error())
 		return
 	}
 
@@ -76,11 +74,11 @@ func (th *TodoHandler) CreateTodo(ctx *gin.Context) {
 
 	createdTodo, err := th.svc.CreateTodo(ctx, &todo)
 	if err != nil {
-		response.HandleError(ctx, err)
+		HandleError(ctx, err)
 		return
 	}
 
-	rsp := response.NewTodoResponse(createdTodo)
+	rsp := NewTodoResponse(createdTodo)
 
 	ctx.JSON(http.StatusCreated, rsp)
 }
@@ -89,20 +87,20 @@ func (th *TodoHandler) UpdateTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if id == "" {
-		response.HandleValidationError(ctx, "ID is required")
+		HandleValidationError(ctx, "ID is required")
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
-		response.HandleValidationError(ctx, "Invalid ID")
+		HandleValidationError(ctx, "Invalid ID")
 		return
 	}
 
-	var req request.UpdateRequest
+	var req UpdateRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(ctx, err.Error())
+		HandleValidationError(ctx, err.Error())
 		return
 	}
 
@@ -113,11 +111,11 @@ func (th *TodoHandler) UpdateTodo(ctx *gin.Context) {
 
 	updatedTodo, err := th.svc.UpdateTodo(ctx, &todo)
 	if err != nil {
-		response.HandleError(ctx, err)
+		HandleError(ctx, err)
 		return
 	}
 
-	rsp := response.NewTodoResponse(updatedTodo)
+	rsp := NewTodoResponse(updatedTodo)
 
 	ctx.JSON(http.StatusOK, rsp)
 }
@@ -126,19 +124,19 @@ func (th *TodoHandler) DeleteTodo(ctx *gin.Context) {
 	id := ctx.Param("id")
 
 	if id == "" {
-		response.HandleValidationError(ctx, "ID is required")
+		HandleValidationError(ctx, "ID is required")
 		return
 	}
 
 	parsedUUID, err := uuid.Parse(id)
 	if err != nil {
-		response.HandleValidationError(ctx, "Invalid ID")
+		HandleValidationError(ctx, "Invalid ID")
 		return
 	}
 
 	err = th.svc.DeleteTodo(ctx, parsedUUID)
 	if err != nil {
-		response.HandleError(ctx, err)
+		HandleError(ctx, err)
 		return
 	}
 

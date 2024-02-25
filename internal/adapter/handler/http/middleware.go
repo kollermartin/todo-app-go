@@ -1,4 +1,4 @@
-package middleware
+package http
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func LoggerMiddleware() gin.HandlerFunc {
+func loggerMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
 

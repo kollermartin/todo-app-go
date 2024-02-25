@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"todo-app/config"
-	"todo-app/internal/application/todo"
+	"todo-app/internal/adapter/handler/http"
+	"todo-app/internal/adapter/postgres"
+	"todo-app/internal/adapter/postgres/repository"
 	"todo-app/internal/domain/service"
-	"todo-app/internal/infrastructure/postgre"
-	"todo-app/internal/infrastructure/postgre/repo"
-	"todo-app/internal/ui/http"
 	"todo-app/pkg/logger"
 
 	"github.com/sirupsen/logrus"
@@ -29,7 +28,7 @@ func main() {
 
 	ctx := context.Background()
 
-	db, err := postgre.New(ctx, config.Db)
+	db, err := postgres.New(ctx, config.Db)
 	if err != nil {
 		logrus.Fatal("Error initializing database", err)
 	}
@@ -45,9 +44,9 @@ func main() {
 
 	logrus.Info("Successfully ran migrations")
 
-	todoRepo := repo.NewTodoRepository(db)
+	todoRepo := repository.NewTodoRepository(db)
 	todoService := service.NewTodoService(todoRepo)
-	todoHandler := todo.NewTodoHandler(todoService)
+	todoHandler := http.NewTodoHandler(todoService)
 
 	router, err := http.NewRouter(todoHandler)
 
