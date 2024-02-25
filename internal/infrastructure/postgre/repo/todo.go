@@ -1,11 +1,11 @@
-package repository
+package repo
 
 import (
 	"context"
 	"database/sql"
-	"todo-app/internal/adapter/postgres"
 	"todo-app/internal/domain/entity"
 	"todo-app/internal/domain/errors"
+	"todo-app/internal/infrastructure/postgre"
 
 	// "todo-app/internal/domain/vo"
 
@@ -13,11 +13,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// TODO rozsekat na jednotlivé operace
 type TodoRepository struct {
-	db *postgres.DB
+	db *postgre.DB
 }
 
-func NewTodoRepository(db *postgres.DB) *TodoRepository {
+func NewTodoRepository(db *postgre.DB) *TodoRepository {
 	return &TodoRepository{db}
 }
 

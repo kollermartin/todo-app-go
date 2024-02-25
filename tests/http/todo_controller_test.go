@@ -13,11 +13,14 @@ import (
 
 	// "time"
 	"todo-app/config"
-	handler "todo-app/internal/adapter/handler/http"
-	"todo-app/internal/adapter/postgres"
-	"todo-app/internal/adapter/postgres/repository"
+	"todo-app/internal/application/todo"
 	"todo-app/internal/domain/entity"
 	"todo-app/internal/domain/service"
+	"todo-app/internal/infrastructure/postgre"
+	"todo-app/internal/infrastructure/postgre/repo"
+	httpRouter "todo-app/internal/ui/http"
+	"todo-app/internal/ui/http/request"
+	"todo-app/internal/ui/http/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -43,7 +46,7 @@ var (
 	}
 )
 
-func Init() (db *postgres.DB, container testcontainers.Container) {
+func Init() (db *postgre.DB, container testcontainers.Container) {
 	ctx := context.Background()
 
 	container, host, port, error := CreateTestContainer(ctx)
@@ -72,7 +75,7 @@ func Init() (db *postgres.DB, container testcontainers.Container) {
 		},
 	}
 
-	db, err := postgres.New(ctx, config.Db)
+	db, err := postgre.New(ctx, config.Db)
 	if err != nil {
 		logrus.Fatal("Error initializing test database", err)
 	}
@@ -96,7 +99,7 @@ func TestGetTodos(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	t.Run("It should get all todos", func(t *testing.T) {
-		var todos []handler.TodoResponse
+		var todos []response.TodoResponse
 		err := json.Unmarshal(w.Body.Bytes(), &todos)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response body: %v", err)
@@ -111,7 +114,7 @@ func TestGetTodoByID(t *testing.T) {
 	t.Run("It should return todo by id", func(t *testing.T) {
 		todos := GetTodosFromDB(db)
 
-		expectedTodoRes := handler.NewTodoResponse(&todos[0])
+		expectedTodoRes := response.NewTodoResponse(&todos[0])
 
 		req, _ := http.NewRequest("GET", "/todos/"+expectedTodoRes.ID, nil)
 
@@ -119,7 +122,7 @@ func TestGetTodoByID(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 
-		var todoResponse handler.TodoResponse
+		var todoResponse response.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -159,7 +162,7 @@ func TestGetTodoByID(t *testing.T) {
 func TestCreateTodo(t *testing.T) {
 	t.Run("It should create a new todo", func(t *testing.T) {
 
-		todoInput := handler.CreateRequest{
+		todoInput := request.CreateRequest{
 			Title: "Test todo",
 		}
 
@@ -173,7 +176,7 @@ func TestCreateTodo(t *testing.T) {
 
 		assert.Equal(t, 201, w.Code)
 
-		var todoResponse handler.TodoResponse
+		var todoResponse response.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -187,7 +190,7 @@ func TestCreateTodo(t *testing.T) {
 	})
 
 	t.Run("It should return 400 if title is missing", func(t *testing.T) {
-		todoInput := handler.CreateRequest{
+		todoInput := request.CreateRequest{
 			Title: "",
 		}
 
@@ -217,9 +220,9 @@ func TestUpdateTodo(t *testing.T) {
 	t.Run("It should update todo", func(t *testing.T) {
 		todos := GetTodosFromDB(db)
 
-		todo := handler.NewTodoResponse(&todos[0])
+		todo := response.NewTodoResponse(&todos[0])
 
-		todoInput := handler.UpdateRequest{
+		todoInput := request.UpdateRequest{
 			Title: "Updated task",
 		}
 
@@ -231,7 +234,7 @@ func TestUpdateTodo(t *testing.T) {
 
 		router.ServeHTTP(w, req)
 
-		var todoResponse handler.TodoResponse
+		var todoResponse response.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -249,7 +252,7 @@ func TestUpdateTodo(t *testing.T) {
 
 	t.Run("It should return 404 if todo doesnt exist", func(t *testing.T) {
 		randomUUID := uuid.New().String()
-		todoInput := handler.UpdateRequest{
+		todoInput := request.UpdateRequest{
 			Title: "Updated task",
 		}
 
@@ -278,7 +281,7 @@ func TestDeleteTodo(t *testing.T) {
 
 	t.Run("It should delete todo", func(t *testing.T) {
 		todos := GetTodosFromDB(db)
-		todo := handler.NewTodoResponse(&todos[0])
+		todo := response.NewTodoResponse(&todos[0])
 
 		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID, nil)
 
@@ -311,10 +314,10 @@ func TestMain(m *testing.M) {
 	defer testDb.Close()
 	defer CleanUpContainer(container)
 
-	todoRepo := repository.NewTodoRepository(testDb)
+	todoRepo := repo.NewTodoRepository(testDb)
 	todoService := service.NewTodoService(todoRepo)
-	todoHandler := handler.NewTodoHandler(todoService)
-	routeris, err := handler.NewRouter(todoHandler)
+	todoHandler := todo.NewTodoHandler(todoService)
+	routeris, err := httpRouter.NewRouter(todoHandler)
 	if err != nil {
 		logrus.Fatal("Error initializing router", err)
 	}

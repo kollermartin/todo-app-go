@@ -1,18 +1,23 @@
 package http
 
-import "github.com/gin-gonic/gin"
+import (
+	"todo-app/internal/application/todo"
+	"todo-app/internal/ui/http/middleware"
+
+	"github.com/gin-gonic/gin"
+)
 
 type Router struct {
 	Engine *gin.Engine
 }
 
 func NewRouter(
-	todoHandler *TodoHandler,
+	todoHandler *todo.TodoHandler,
 ) (*Router, error) {
 	router := gin.New()
 
 	router.Use(gin.Recovery())
-	router.Use(loggerMiddleware())
+	router.Use(middleware.LoggerMiddleware())
 
 	router.GET("/todos", todoHandler.GetAllTodos)
 	router.POST("/todos", todoHandler.CreateTodo)

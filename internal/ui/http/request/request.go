@@ -1,4 +1,4 @@
-package http
+package request
 
 type CreateRequest struct {
 	Title string `json:"title" binding:"required"`
