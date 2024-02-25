@@ -64,8 +64,8 @@ func (ts *TodoService) DeleteTodo(ctx context.Context, uuid uuid.UUID) error {
 }
 
 func handleErrorSelection(err error) error {
-	if err == domain.ErrTicketNotFound {
-		return domain.ErrTicketNotFound
+	if err == domain.ErrNotFound {
+		return domain.ErrNotFound
 	}
 
 	return domain.ErrInternal
