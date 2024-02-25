@@ -1,8 +1,7 @@
-package entity
+package domain
 
 import (
 	"time"
-	// "todo-app/internal/domain/vo"
 
 	"github.com/google/uuid"
 )

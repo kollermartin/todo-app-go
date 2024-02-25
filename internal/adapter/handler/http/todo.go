@@ -2,10 +2,8 @@ package http
 
 import (
 	"net/http"
-	"todo-app/internal/domain/entity"
-	"todo-app/internal/domain/port"
-
-	// "todo-app/internal/domain/vo"
+	"todo-app/internal/core/domain"
+	"todo-app/internal/core/port"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -68,7 +66,7 @@ func (th *TodoHandler) CreateTodo(ctx *gin.Context) {
 		return
 	}
 
-	todo := entity.Todo{
+	todo := domain.Todo{
 		Title: req.Title,
 	}
 
@@ -104,7 +102,7 @@ func (th *TodoHandler) UpdateTodo(ctx *gin.Context) {
 		return
 	}
 
-	todo := entity.Todo{
+	todo := domain.Todo{
 		UUID:  parsedUUID,
 		Title: req.Title,
 	}

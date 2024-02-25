@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"todo-app/internal/domain/entity"
-	"todo-app/internal/domain/errors"
-	"todo-app/internal/domain/port"
+	"todo-app/internal/core/domain"
+	"todo-app/internal/core/port"
 
 	"github.com/google/uuid"
 )
-//TODO refactor to usecases/operations
+
 type TodoService struct {
 	repo port.TodoRepository
 }
@@ -17,7 +16,7 @@ func NewTodoService(repo port.TodoRepository) *TodoService {
 	return &TodoService{repo}
 }
 
-func (ts *TodoService) GetAllTodos(ctx context.Context) ([]entity.Todo, error) {
+func (ts *TodoService) GetAllTodos(ctx context.Context) ([]domain.Todo, error) {
 	todos, err := ts.repo.GetAllTodos(ctx)
 	if err != nil {
 		return nil, handleErrorSelection(err)
@@ -26,7 +25,7 @@ func (ts *TodoService) GetAllTodos(ctx context.Context) ([]entity.Todo, error) {
 	return todos, nil
 }
 
-func (ts *TodoService) GetTodo(ctx context.Context, uuid uuid.UUID) (*entity.Todo, error) {
+func (ts *TodoService) GetTodo(ctx context.Context, uuid uuid.UUID) (*domain.Todo, error) {
 	todo, err := ts.repo.GetTodo(ctx, uuid)
 	if err != nil {
 		return nil, handleErrorSelection(err)
@@ -35,7 +34,7 @@ func (ts *TodoService) GetTodo(ctx context.Context, uuid uuid.UUID) (*entity.Tod
 	return todo, nil
 }
 
-func (ts *TodoService) CreateTodo(ctx context.Context, todo *entity.Todo) (*entity.Todo, error) {
+func (ts *TodoService) CreateTodo(ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
 	todo.UUID = uuid.New()
 
 	todo, err := ts.repo.CreateTodo(ctx, todo)
@@ -46,7 +45,7 @@ func (ts *TodoService) CreateTodo(ctx context.Context, todo *entity.Todo) (*enti
 	return todo, nil
 }
 
-func (ts *TodoService) UpdateTodo(ctx context.Context, todo *entity.Todo) (*entity.Todo, error) {
+func (ts *TodoService) UpdateTodo(ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
 	todo, err := ts.repo.UpdateTodo(ctx, todo)
 	if err != nil {
 		return nil, handleErrorSelection(err)
@@ -65,9 +64,9 @@ func (ts *TodoService) DeleteTodo(ctx context.Context, uuid uuid.UUID) error {
 }
 
 func handleErrorSelection(err error) error {
-	if err == errors.ErrTicketNotFound {
-		return errors.ErrTicketNotFound
+	if err == domain.ErrTicketNotFound {
+		return domain.ErrTicketNotFound
 	}
 
-	return errors.ErrInternal
+	return domain.ErrInternal
 }

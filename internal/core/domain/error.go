@@ -1,4 +1,4 @@
-package errors
+package domain
 
 import "errors"
 // TODO improve errors

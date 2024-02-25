@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"time"
-	"todo-app/internal/domain/entity"
+	"todo-app/internal/core/domain"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/sirupsen/logrus"
@@ -16,7 +16,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func SeedDB(db *sql.DB, testData []entity.Todo) error {
+func SeedDB(db *sql.DB, testData []domain.Todo) error {
 	if testData == nil && len(testData) == 0 {
 		return nil
 	}
@@ -32,8 +32,8 @@ func SeedDB(db *sql.DB, testData []entity.Todo) error {
 	return nil
 }
 
-func GetTodosFromDB(db *sql.DB) []entity.Todo {
-	var todos []entity.Todo
+func GetTodosFromDB(db *sql.DB) []domain.Todo {
+	var todos []domain.Todo
 	rows, err := db.Query("SELECT uuid, id, title, created_at, updated_at FROM todos")
 
 	if err != nil {
@@ -42,7 +42,7 @@ func GetTodosFromDB(db *sql.DB) []entity.Todo {
 	}
 
 	for rows.Next() {
-		var todo entity.Todo
+		var todo domain.Todo
 		err := rows.Scan(&todo.UUID, &todo.ID, &todo.Title, &todo.CreatedAt, &todo.UpdatedAt)
 
 		if err != nil {

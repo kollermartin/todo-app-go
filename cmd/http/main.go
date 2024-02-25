@@ -7,7 +7,7 @@ import (
 	"todo-app/internal/adapter/handler/http"
 	"todo-app/internal/adapter/postgres"
 	"todo-app/internal/adapter/postgres/repository"
-	"todo-app/internal/domain/service"
+	"todo-app/internal/core/service"
 	"todo-app/pkg/logger"
 
 	"github.com/sirupsen/logrus"
