@@ -1,31 +1,65 @@
 package config
 
-import (
-	"todo-app/app/constant"
-	"todo-app/app/types"
+import "github.com/spf13/viper"
 
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-)
+type App struct {
+	Name           string
+	Env            string
+	Port           string
+	MigrationsPath string
+}
 
-func LoadConfig(path string) (config *types.Config) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName(".env")
-	viper.SetConfigType("env")
+type Db struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
+	Type     string
+}
+
+type HTTP struct {
+	URL  string
+	Port string
+}
+
+type Config struct {
+	App  *App
+	Db   *Db
+	HTTP *HTTP
+}
+
+func New() (*Config, error) {
+	viper.SetConfigFile(".env")
 
 	if err := viper.ReadInConfig(); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"event": constant.ConfigLoadLogEventErrorKey,
-			"error": err.Error(),
-		}).Fatal("Failed to read config file")
+		return nil, err
 	}
 
-	if err := viper.Unmarshal(&config); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"event": constant.ConfigLoadLogEventErrorKey,
-			"error": err.Error(),
-		}).Fatal("Failed to unmarshal config file")
+	app := &App{
+		Name:           viper.GetString("APP_NAME"),
+		MigrationsPath: viper.GetString("APP_MIGRATIONS_PATH"),
+		Env:            viper.GetString("ENV"),
+		Port:           viper.GetString("PORT"),
 	}
 
-	return config
+	db := &Db{
+		Host:     viper.GetString("DB_HOST"),
+		Port:     viper.GetString("DB_PORT"),
+		User:     viper.GetString("DB_USER"),
+		Password: viper.GetString("DB_PASS"),
+		Name:     viper.GetString("DB_NAME"),
+		Type:     viper.GetString("DB_TYPE"),
+	}
+
+	http := &HTTP{
+		URL:  viper.GetString("HTTP_URL"),
+		Port: viper.GetString("HTTP_PORT"),
+	}
+
+	return &Config{
+		App:  app,
+		Db:   db,
+		HTTP: http,
+	}, nil
 }

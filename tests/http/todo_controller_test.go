@@ -1,7 +1,8 @@
-package controller
+package tests
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -9,45 +10,83 @@ import (
 	"os"
 	"testing"
 	"time"
-	"todo-app/app/service"
-	"todo-app/app/types"
-	"todo-app/app/utils"
+
+	// "time"
+	"todo-app/config"
+	handler "todo-app/internal/adapter/handler/http"
+	"todo-app/internal/adapter/postgres"
+	"todo-app/internal/adapter/postgres/repository"
+	"todo-app/internal/core/domain"
+	"todo-app/internal/core/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 var (
 	db       *sql.DB
-	log      *logrus.Logger
 	router   *gin.Engine
-	testData = []types.Todo{
-		{ID: 1, ExternalID: "2233a6b2-ae99-40fc-bdd7-db49834993ab", Title: "Task 1", CreatedAt: time.Date(2023, 12, 29, 18, 26, 45, 0, time.UTC)},
-		{ID: 2, ExternalID: "1c15f5f7-3207-4d4a-b50f-f6f8bacfb0e9", Title: "Task 2", CreatedAt: time.Date(2023, 12, 29, 18, 25, 18, 0, time.UTC)},
-		{ID: 3, ExternalID: "4ffaaf6e-6693-45a4-b1d2-02da81bebc46", Title: "Task 3", CreatedAt: time.Date(2023, 12, 29, 18, 32, 19, 0, time.UTC)},
-		{ID: 4, ExternalID: "6e6a468c-bb56-4d11-ab57-b91c46501ae7", Title: "Task 4", CreatedAt: time.Date(2023, 12, 29, 18, 16, 29, 0, time.UTC)},
-		{ID: 5, ExternalID: "1c5b7f6f-ee0b-4e48-b246-c8206d1dccc2", Title: "Task 5", CreatedAt: time.Date(2023, 12, 29, 18, 13, 57, 0, time.UTC)},
-		{ID: 6, ExternalID: "0c3cd173-ec71-42f8-a191-49bf5613f3f0", Title: "Task 6", CreatedAt: time.Date(2023, 12, 29, 18, 37, 1, 0, time.UTC)},
-		{ID: 7, ExternalID: "71757bd0-21fe-44f0-8768-4be10fd2e8e5", Title: "Task 7", CreatedAt: time.Date(2023, 12, 29, 18, 30, 40, 0, time.UTC)},
-		{ID: 8, ExternalID: "2ea5cc31-fe70-444c-887d-b48a22d8f265", Title: "Task 8", CreatedAt: time.Date(2023, 12, 29, 18, 29, 22, 0, time.UTC)},
-		{ID: 9, ExternalID: "597b2371-bd2a-48cc-8c25-e018a37803f4", Title: "Task 9", CreatedAt: time.Date(2023, 12, 29, 18, 14, 28, 0, time.UTC)},
-		{ID: 10, ExternalID: "400e27ed-32ff-4e3a-b6e7-0e0c09a0c121", Title: "Task 10", CreatedAt: time.Date(2023, 12, 29, 18, 6, 58, 0, time.UTC)},
+	testData = []domain.Todo{
+		{Title: "Task 1"},
+		{Title: "Task 2"},
+		{Title: "Task 3"},
+		{Title: "Task 4"},
+		{Title: "Task 5"},
+		{Title: "Task 6"},
+		{Title: "Task 7"},
+		{Title: "Task 8"},
+		{Title: "Task 9"},
+		{Title: "Task 10"},
 	}
 )
 
-func setupRouter() {
-	router = gin.Default()
-	log = logrus.New()
-	todoService := service.NewTodoService(db) // Create an instance of TodoService
+func Init() (db *postgres.DB, container testcontainers.Container) {
+	ctx := context.Background()
 
-	router.GET("/todos", GetTodos(todoService))
-	router.GET("/todos/:id", GetTodoByID(todoService))
-	router.POST("/todos", CreateTodo(todoService))
-	router.PUT("/todos/:id", UpdateTodo(todoService))
-	router.DELETE("/todos/:id", DeleteTodo(todoService))
+	container, host, port, error := CreateTestContainer(ctx)
+	if error != nil {
+		logrus.Fatal("Error creating test container", error)
+	}
 
+	config := config.Config{
+		App: &config.App{
+			Name:           "todo-app-test",
+			Env:            "test",
+			Port:           "3000",
+			MigrationsPath: "../../migrations",
+		},
+		Db: &config.Db{
+			Host:     host,
+			Port:     port,
+			User:     "postgres",
+			Password: "postgres",
+			Name:     "postgres",
+			Type:     "postgres",
+		},
+		HTTP: &config.HTTP{
+			URL:  "localhost",
+			Port: "8080",
+		},
+	}
+
+	db, err := postgres.New(ctx, config.Db)
+	if err != nil {
+		logrus.Fatal("Error initializing test database", err)
+	}
+
+	err = db.Migrate(config.App)
+	if err != nil {
+		logrus.Fatal("Error running migrations", err)
+	}
+
+	if err := SeedDB(db.SqlDB, testData); err != nil {
+		logrus.Fatal("Error seeding database", err)
+	}
+
+	return db, container
 }
 
 func TestGetTodos(t *testing.T) {
@@ -57,7 +96,7 @@ func TestGetTodos(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	t.Run("It should get all todos", func(t *testing.T) {
-		var todos []types.TodoResponse
+		var todos []handler.TodoResponse
 		err := json.Unmarshal(w.Body.Bytes(), &todos)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response body: %v", err)
@@ -70,15 +109,17 @@ func TestGetTodos(t *testing.T) {
 
 func TestGetTodoByID(t *testing.T) {
 	t.Run("It should return todo by id", func(t *testing.T) {
-		todo := *utils.MapTodoResponse(&testData[0])
+		todos := GetTodosFromDB(db)
 
-		req, _ := http.NewRequest("GET", "/todos/"+todo.ID, nil)
+		expectedTodoRes := handler.NewTodoResponse(&todos[0])
+
+		req, _ := http.NewRequest("GET", "/todos/"+expectedTodoRes.ID.String(), nil)
 
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
 
-		var todoResponse types.TodoResponse
+		var todoResponse handler.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -87,7 +128,10 @@ func TestGetTodoByID(t *testing.T) {
 		}
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.EqualValues(t, todo, todoResponse)
+		assert.Equal(t, expectedTodoRes.ID, todoResponse.ID)
+		assert.Equal(t, expectedTodoRes.Title, todoResponse.Title)
+		assert.Equal(t, expectedTodoRes.CreatedAt.In(time.UTC), todoResponse.CreatedAt.In(time.UTC))
+		assert.Equal(t, expectedTodoRes.UpdatedAt.In(time.UTC), todoResponse.UpdatedAt.In(time.UTC))
 	})
 
 	t.Run("It should return 400 if todo id is not uuid", func(t *testing.T) {
@@ -115,7 +159,7 @@ func TestGetTodoByID(t *testing.T) {
 func TestCreateTodo(t *testing.T) {
 	t.Run("It should create a new todo", func(t *testing.T) {
 
-		todoInput := types.TodoInput{
+		todoInput := handler.CreateRequest{
 			Title: "Test todo",
 		}
 
@@ -129,7 +173,7 @@ func TestCreateTodo(t *testing.T) {
 
 		assert.Equal(t, 201, w.Code)
 
-		var todoResponse types.TodoResponse
+		var todoResponse handler.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -143,7 +187,7 @@ func TestCreateTodo(t *testing.T) {
 	})
 
 	t.Run("It should return 400 if title is missing", func(t *testing.T) {
-		todoInput := types.TodoInput{
+		todoInput := handler.CreateRequest{
 			Title: "",
 		}
 
@@ -171,21 +215,23 @@ func TestUpdateTodo(t *testing.T) {
 	})
 
 	t.Run("It should update todo", func(t *testing.T) {
-		todo := *utils.MapTodoResponse(&testData[0])
+		todos := GetTodosFromDB(db)
 
-		todoInput := types.TodoInput{
+		todo := handler.NewTodoResponse(&todos[0])
+
+		todoInput := handler.UpdateRequest{
 			Title: "Updated task",
 		}
 
 		jsonValue, _ := json.Marshal(todoInput)
 
-		req, _ := http.NewRequest("PUT", "/todos/"+todo.ID, bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("PUT", "/todos/"+todo.ID.String(), bytes.NewBuffer(jsonValue))
 
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
 
-		var todoResponse types.TodoResponse
+		var todoResponse handler.TodoResponse
 
 		err := json.Unmarshal(w.Body.Bytes(), &todoResponse)
 
@@ -193,13 +239,17 @@ func TestUpdateTodo(t *testing.T) {
 			t.Fatalf("Failed to unmarshal response body: %v", err)
 		}
 
-		assert.EqualValues(t, todo.ID, todoResponse.ID)
+		assert.Equal(t, todo.ID, todoResponse.ID)
+		assert.Equal(t, todoInput.Title, todoResponse.Title)
+		assert.Equal(t, todo.CreatedAt.In(time.UTC), todoResponse.CreatedAt.In(time.UTC))
+		assert.NotEqual(t, todo.UpdatedAt.In(time.UTC), todoResponse.UpdatedAt.In(time.UTC))
+		assert.True(t, todoResponse.UpdatedAt.After(todo.UpdatedAt))
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("It should return 404 if todo doesnt exist", func(t *testing.T) {
 		randomUUID := uuid.New().String()
-		todoInput := types.TodoInput{
+		todoInput := handler.UpdateRequest{
 			Title: "Updated task",
 		}
 
@@ -227,9 +277,10 @@ func TestDeleteTodo(t *testing.T) {
 	})
 
 	t.Run("It should delete todo", func(t *testing.T) {
-		todo := *utils.MapTodoResponse(&testData[0])
+		todos := GetTodosFromDB(db)
+		todo := handler.NewTodoResponse(&todos[0])
 
-		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID, nil)
+		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID.String(), nil)
 
 		w := httptest.NewRecorder()
 
@@ -252,17 +303,23 @@ func TestDeleteTodo(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	testDB, error := utils.CreateTestDB(testData)
 
-	if error != nil {
-		panic(error.Error())
+	testDb, container := Init()
+
+	db = testDb.SqlDB
+
+	defer testDb.Close()
+	defer CleanUpContainer(container)
+
+	todoRepo := repository.NewTodoRepository(testDb)
+	todoService := service.NewTodoService(todoRepo)
+	todoHandler := handler.NewTodoHandler(todoService)
+	routeris, err := handler.NewRouter(todoHandler)
+	if err != nil {
+		logrus.Fatal("Error initializing router", err)
 	}
 
-	db = testDB.DbInstance
-
-	setupRouter()
-
-	defer testDB.CleanUp()
+	router = routeris.Engine
 
 	os.Exit(m.Run())
 }

@@ -14,7 +14,7 @@ lint:
 	golangci-lint run
 
 build:
-	go build -o bin/app
+	go build -o bin/app ./cmd/http
 
 run:
 	./bin/app
