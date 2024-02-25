@@ -3,27 +3,27 @@ package http
 import (
 	"net/http"
 	"time"
-	"todo-app/internal/core/domain"
+	"todo-app/internal/domain/entity"
+	"todo-app/internal/domain/errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 var errorStatusMap = map[error]int{
-	domain.ErrInternal: http.StatusInternalServerError,
-	domain.ErrTicketNotFound: http.StatusNotFound,
+	errors.ErrInternal: http.StatusInternalServerError,
+	errors.ErrTicketNotFound: http.StatusNotFound,
 }
 
 type TodoResponse struct {
-	ID        uuid.UUID `json:"id"`
+	ID        string `json:"id"`
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func NewTodoResponse(todo *domain.Todo) TodoResponse {
+func NewTodoResponse(todo *entity.Todo) TodoResponse {
 	return TodoResponse{
-		ID:        todo.UUID,
+		ID:        todo.UUID.String(),
 		Title:     todo.Title,
 		CreatedAt: todo.CreatedAt,
 		UpdatedAt: todo.UpdatedAt,
@@ -44,10 +44,10 @@ func HandleError(ctx *gin.Context, err error) {
 	//TODO create UI errors
 
 	switch err {
-		case domain.ErrTicketNotFound:
+		case errors.ErrTicketNotFound:
 			ctx.AbortWithStatusJSON(statusCode, gin.H{"message": "Not Found"})
 			return
-		case domain.ErrInternal:
+		case errors.ErrInternal:
 			ctx.AbortWithStatusJSON(statusCode, gin.H{"message": "Internal Server Error"})
 			return
 		default:

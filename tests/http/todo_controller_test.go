@@ -16,8 +16,8 @@ import (
 	handler "todo-app/internal/adapter/handler/http"
 	"todo-app/internal/adapter/postgres"
 	"todo-app/internal/adapter/postgres/repository"
-	"todo-app/internal/core/domain"
-	"todo-app/internal/core/service"
+	"todo-app/internal/domain/entity"
+	"todo-app/internal/domain/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -29,7 +29,7 @@ import (
 var (
 	db       *sql.DB
 	router   *gin.Engine
-	testData = []domain.Todo{
+	testData = []entity.Todo{
 		{Title: "Task 1"},
 		{Title: "Task 2"},
 		{Title: "Task 3"},
@@ -113,7 +113,7 @@ func TestGetTodoByID(t *testing.T) {
 
 		expectedTodoRes := handler.NewTodoResponse(&todos[0])
 
-		req, _ := http.NewRequest("GET", "/todos/"+expectedTodoRes.ID.String(), nil)
+		req, _ := http.NewRequest("GET", "/todos/"+expectedTodoRes.ID, nil)
 
 		w := httptest.NewRecorder()
 
@@ -225,7 +225,7 @@ func TestUpdateTodo(t *testing.T) {
 
 		jsonValue, _ := json.Marshal(todoInput)
 
-		req, _ := http.NewRequest("PUT", "/todos/"+todo.ID.String(), bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("PUT", "/todos/"+todo.ID, bytes.NewBuffer(jsonValue))
 
 		w := httptest.NewRecorder()
 
@@ -280,7 +280,7 @@ func TestDeleteTodo(t *testing.T) {
 		todos := GetTodosFromDB(db)
 		todo := handler.NewTodoResponse(&todos[0])
 
-		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID.String(), nil)
+		req, _ := http.NewRequest("DELETE", "/todos/"+todo.ID, nil)
 
 		w := httptest.NewRecorder()
 

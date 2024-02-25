@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"todo-app/internal/adapter/postgres"
-	"todo-app/internal/core/domain"
+	"todo-app/internal/domain/entity"
+	"todo-app/internal/domain/errors"
+
+	// "todo-app/internal/domain/vo"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -18,9 +21,9 @@ func NewTodoRepository(db *postgres.DB) *TodoRepository {
 	return &TodoRepository{db}
 }
 
-func (tr *TodoRepository) GetAllTodos(ctx context.Context) ([]domain.Todo, error) {
-	var todo domain.Todo
-	var todos []domain.Todo
+func (tr *TodoRepository) GetAllTodos(ctx context.Context) ([]entity.Todo, error) {
+	var todo entity.Todo
+	var todos []entity.Todo
 
 	rows, err := tr.db.SqlDB.Query("SELECT * FROM todos")
 	if err != nil {
@@ -40,14 +43,14 @@ func (tr *TodoRepository) GetAllTodos(ctx context.Context) ([]domain.Todo, error
 	return todos, nil
 }
 
-func (tr *TodoRepository) GetTodo(ctx context.Context, uuid uuid.UUID) (*domain.Todo, error) {
-	var todo domain.Todo
+func (tr *TodoRepository) GetTodo(ctx context.Context, uuid uuid.UUID) (*entity.Todo, error) {
+	var todo entity.Todo
 
 	err := tr.db.SqlDB.QueryRow("SELECT * from todos where uuid = $1", uuid).Scan(&todo.ID, &todo.UUID, &todo.Title, &todo.CreatedAt, &todo.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, domain.ErrTicketNotFound
+			return nil, errors.ErrTicketNotFound
 		}
 
 		return nil, err
@@ -56,8 +59,8 @@ func (tr *TodoRepository) GetTodo(ctx context.Context, uuid uuid.UUID) (*domain.
 	return &todo, nil
 }
 
-func (tr *TodoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
-	newTodo := domain.Todo{
+func (tr *TodoRepository) CreateTodo(ctx context.Context, todo *entity.Todo) (*entity.Todo, error) {
+	newTodo := entity.Todo{
 		Title: todo.Title,
 	}
 
@@ -70,13 +73,13 @@ func (tr *TodoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) (*d
 	return &newTodo, nil
 }
 
-func (tr *TodoRepository) UpdateTodo(ctx context.Context, todo *domain.Todo) (*domain.Todo, error) {
-	var updatedTodo domain.Todo
+func (tr *TodoRepository) UpdateTodo(ctx context.Context, todo *entity.Todo) (*entity.Todo, error) {
+	var updatedTodo entity.Todo
 
 	err := tr.db.SqlDB.QueryRow("UPDATE todos SET title = $1, updated_at = now() WHERE uuid = $2 RETURNING id, uuid, title, created_at, updated_at", todo.Title, todo.UUID).Scan(&updatedTodo.ID, &updatedTodo.UUID, &updatedTodo.Title, &updatedTodo.CreatedAt, &updatedTodo.UpdatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, domain.ErrTicketNotFound
+		return nil, errors.ErrTicketNotFound
 	}
 
 	if err != nil {
@@ -99,7 +102,7 @@ func (tr *TodoRepository) DeleteTodo(ctx context.Context, uuid uuid.UUID) error 
 	}
 
 	if rowsAffected == 0 {
-		return domain.ErrTicketNotFound
+		return errors.ErrTicketNotFound
 	}
 
 	return nil
