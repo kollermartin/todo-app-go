@@ -14,17 +14,17 @@ import (
 )
 
 type TodoHandler struct {
-	svc port.TodoService
+	repo port.TodoRepository
 }
 
-func NewTodoHandler(svc port.TodoService) *TodoHandler {
-	return &TodoHandler{svc}
+func NewTodoHandler(repo port.TodoRepository) *TodoHandler {
+	return &TodoHandler{repo}
 }
-//TODO Remove gin
+
 func (th *TodoHandler) GetAllTodos(ctx *gin.Context) {
 	todoListRsp := []response.TodoResponse{}
 
-	todos, err := th.svc.GetAllTodos(ctx)
+	todos, err := th.repo.GetAllTodos(ctx)
 	if err != nil {
 		response.HandleError(ctx, err)
 		return
@@ -51,7 +51,7 @@ func (th *TodoHandler) GetTodo(ctx *gin.Context) {
 		return
 	}
 
-	todo, err := th.svc.GetTodo(ctx, parsedUUID)
+	todo, err := th.repo.GetTodo(ctx, parsedUUID)
 	if err != nil {
 		response.HandleError(ctx, err)
 		return
@@ -74,7 +74,7 @@ func (th *TodoHandler) CreateTodo(ctx *gin.Context) {
 		Title: req.Title,
 	}
 
-	createdTodo, err := th.svc.CreateTodo(ctx, &todo)
+	createdTodo, err := th.repo.CreateTodo(ctx, &todo)
 	if err != nil {
 		response.HandleError(ctx, err)
 		return
@@ -111,7 +111,7 @@ func (th *TodoHandler) UpdateTodo(ctx *gin.Context) {
 		Title: req.Title,
 	}
 
-	updatedTodo, err := th.svc.UpdateTodo(ctx, &todo)
+	updatedTodo, err := th.repo.UpdateTodo(ctx, &todo)
 	if err != nil {
 		response.HandleError(ctx, err)
 		return
@@ -136,7 +136,7 @@ func (th *TodoHandler) DeleteTodo(ctx *gin.Context) {
 		return
 	}
 
-	err = th.svc.DeleteTodo(ctx, parsedUUID)
+	err = th.repo.DeleteTodo(ctx, parsedUUID)
 	if err != nil {
 		response.HandleError(ctx, err)
 		return

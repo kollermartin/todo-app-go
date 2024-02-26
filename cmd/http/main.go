@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"todo-app/config"
 	"todo-app/internal/application/todo"
-	"todo-app/internal/domain/service"
 	"todo-app/internal/infrastructure/postgre"
 	"todo-app/internal/infrastructure/postgre/repo"
 	"todo-app/internal/ui/http"
@@ -46,8 +45,7 @@ func main() {
 	logrus.Info("Successfully ran migrations")
 
 	todoRepo := repo.NewTodoRepository(db)
-	todoService := service.NewTodoService(todoRepo)
-	todoHandler := todo.NewTodoHandler(todoService)
+	todoHandler := todo.NewTodoHandler(todoRepo)
 
 	router, err := http.NewRouter(todoHandler)
 

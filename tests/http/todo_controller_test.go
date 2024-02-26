@@ -15,7 +15,6 @@ import (
 	"todo-app/config"
 	"todo-app/internal/application/todo"
 	"todo-app/internal/domain/entity"
-	"todo-app/internal/domain/service"
 	"todo-app/internal/infrastructure/postgre"
 	"todo-app/internal/infrastructure/postgre/repo"
 	httpRouter "todo-app/internal/ui/http"
@@ -315,8 +314,7 @@ func TestMain(m *testing.M) {
 	defer CleanUpContainer(container)
 
 	todoRepo := repo.NewTodoRepository(testDb)
-	todoService := service.NewTodoService(todoRepo)
-	todoHandler := todo.NewTodoHandler(todoService)
+	todoHandler := todo.NewTodoHandler(todoRepo)
 	routeris, err := httpRouter.NewRouter(todoHandler)
 	if err != nil {
 		logrus.Fatal("Error initializing router", err)
