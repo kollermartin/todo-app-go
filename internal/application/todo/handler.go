@@ -16,7 +16,7 @@ import (
 type TodoHandler struct {
 	repo port.TodoRepository
 }
-
+//TODo zbavit se ctx z application vrstvy
 func NewTodoHandler(repo port.TodoRepository) *TodoHandler {
 	return &TodoHandler{repo}
 }

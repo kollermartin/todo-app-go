@@ -8,7 +8,6 @@ import (
 	// "todo-app/internal/domain/vo"
 )
 
-//TODO Refactor this to usecases/operations
 type TodoRepository interface {
 	GetAllTodos(ctx context.Context) ([]entity.Todo, error)
 	GetTodo(ctx context.Context, uuid uuid.UUID) (*entity.Todo, error)
