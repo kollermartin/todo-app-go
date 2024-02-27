@@ -3,6 +3,7 @@ package http
 import (
 	"todo-app/internal/application/todo"
 	"todo-app/internal/ui/http/middleware"
+	"todo-app/internal/ui/http/route"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,11 +20,17 @@ func NewRouter(
 	router.Use(gin.Recovery())
 	router.Use(middleware.LoggerMiddleware())
 
-	router.GET("/todos", todoHandler.GetAllTodos)
-	router.POST("/todos", todoHandler.CreateTodo)
-	router.GET("/todos/:id", todoHandler.GetTodo)
-	router.PUT("/todos/:id", todoHandler.UpdateTodo)
-	router.DELETE("/todos/:id", todoHandler.DeleteTodo)
+	getAllTodosRoute := route.NewGetTodosRoute(todoHandler)
+	getTodoRoute := route.NewGetTodoRoute(todoHandler)
+	createTodoRoute := route.NewCreateTodoRoute(todoHandler)
+	updateTodoRoute := route.NewUpdateTodoRoute(todoHandler)
+	deleteTodoRoute := route.NewDeleteTodoRoute(todoHandler)
+
+	router.GET(route.GetTodosPath, getAllTodosRoute)
+	router.POST(route.CreateTodoPath, createTodoRoute)
+	router.GET(route.GetTodoPath, getTodoRoute)
+	router.PUT(route.UpdateTodoPath, updateTodoRoute)
+	router.DELETE(route.DeleteTodoPath, deleteTodoRoute)
 
 	return &Router{router}, nil
 }

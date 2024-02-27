@@ -1,11 +1,10 @@
 package todo
 
 import (
-	"net/http"
+	"context"
 	"todo-app/internal/domain/entity"
-	"todo-app/internal/domain/port"
+	"todo-app/internal/domain/repository"
 	"todo-app/internal/ui/http/request"
-	"todo-app/internal/ui/http/response"
 
 	// "todo-app/internal/domain/vo"
 
@@ -14,133 +13,97 @@ import (
 )
 
 type TodoHandler struct {
-	repo port.TodoRepository
+	repo repository.TodoRepository
 }
 //TODo zbavit se ctx z application vrstvy
-func NewTodoHandler(repo port.TodoRepository) *TodoHandler {
+func NewTodoHandler(repo repository.TodoRepository) *TodoHandler {
 	return &TodoHandler{repo}
 }
 
-func (th *TodoHandler) GetAllTodos(ctx *gin.Context) {
-	todoListRsp := []response.TodoResponse{}
-
+func (th *TodoHandler) GetAllTodos(ctx context.Context) ([]entity.Todo, error) {
 	todos, err := th.repo.GetAllTodos(ctx)
 	if err != nil {
-		response.HandleError(ctx, err)
-		return
+		return nil, err
 	}
 
-	for _, todo := range todos {
-		todoListRsp = append(todoListRsp, response.NewTodoResponse(&todo))
-	}
-
-	ctx.JSON(http.StatusOK, todoListRsp)
+	return todos, nil
 }
 
-func (th *TodoHandler) GetTodo(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	if id == "" {
-		response.HandleValidationError(ctx, "ID is required")
-		return
-	}
-
-	parsedUUID, err := uuid.Parse(id)
+func (th *TodoHandler) GetTodo(ctx *gin.Context, id uuid.UUID) (*entity.Todo, error) {
+	todo, err := th.repo.GetTodo(ctx, id)
 	if err != nil {
-		response.HandleValidationError(ctx, "Invalid ID")
-		return
+		return nil, err
 	}
 
-	todo, err := th.repo.GetTodo(ctx, parsedUUID)
-	if err != nil {
-		response.HandleError(ctx, err)
-		return
-	}
-
-	rsp := response.NewTodoResponse(todo)
-
-	ctx.JSON(http.StatusOK, rsp)
+	return todo, nil
 }
 
-func (th *TodoHandler) CreateTodo(ctx *gin.Context) {
-	var req request.CreateRequest
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(ctx, err.Error())
-		return
-	}
-
+func (th *TodoHandler) CreateTodo(ctx *gin.Context, todoReq *request.CreateRequest) (*entity.Todo, error) {
 	todo := entity.Todo{
-		Title: req.Title,
+		Title: todoReq.Title,
 	}
 
 	createdTodo, err := th.repo.CreateTodo(ctx, &todo)
 	if err != nil {
-		response.HandleError(ctx, err)
-		return
+		return nil, err
 	}
 
-	rsp := response.NewTodoResponse(createdTodo)
-
-	ctx.JSON(http.StatusCreated, rsp)
+	return createdTodo, nil
 }
 
-func (th *TodoHandler) UpdateTodo(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	if id == "" {
-		response.HandleValidationError(ctx, "ID is required")
-		return
-	}
-
-	parsedUUID, err := uuid.Parse(id)
-	if err != nil {
-		response.HandleValidationError(ctx, "Invalid ID")
-		return
-	}
-
-	var req request.UpdateRequest
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.HandleValidationError(ctx, err.Error())
-		return
-	}
-
+func (th *TodoHandler) UpdateTodo(ctx *gin.Context, id uuid.UUID , todoReq *request.UpdateRequest) (*entity.Todo, error) {
 	todo := entity.Todo{
-		UUID:  parsedUUID,
-		Title: req.Title,
+		Title: todoReq.Title,
+		UUID: id,
 	}
 
 	updatedTodo, err := th.repo.UpdateTodo(ctx, &todo)
 	if err != nil {
-		response.HandleError(ctx, err)
-		return
+		return nil, err
 	}
 
-	rsp := response.NewTodoResponse(updatedTodo)
+	return updatedTodo, nil
+	// id := ctx.Param("id")
 
-	ctx.JSON(http.StatusOK, rsp)
+	// if id == "" {
+	// 	response.HandleValidationError(ctx, "ID is required")
+	// 	return
+	// }
+
+	// parsedUUID, err := uuid.Parse(id)
+	// if err != nil {
+	// 	response.HandleValidationError(ctx, "Invalid ID")
+	// 	return
+	// }
+
+	// var req request.UpdateRequest
+
+	// if err := ctx.ShouldBindJSON(&req); err != nil {
+	// 	response.HandleValidationError(ctx, err.Error())
+	// 	return
+	// }
+
+	// todo := entity.Todo{
+	// 	UUID:  parsedUUID,
+	// 	Title: req.Title,
+	// }
+
+	// updatedTodo, err := th.repo.UpdateTodo(ctx, &todo)
+	// if err != nil {
+	// 	response.HandleError(ctx, err)
+	// 	return
+	// }
+
+	// rsp := response.NewTodoResponse(updatedTodo)
+
+	// ctx.JSON(http.StatusOK, rsp)
 }
 
-func (th *TodoHandler) DeleteTodo(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	if id == "" {
-		response.HandleValidationError(ctx, "ID is required")
-		return
-	}
-
-	parsedUUID, err := uuid.Parse(id)
+func (th *TodoHandler) DeleteTodo(ctx *gin.Context, id uuid.UUID) error {
+	err := th.repo.DeleteTodo(ctx, id)
 	if err != nil {
-		response.HandleValidationError(ctx, "Invalid ID")
-		return
+		return err
 	}
-
-	err = th.repo.DeleteTodo(ctx, parsedUUID)
-	if err != nil {
-		response.HandleError(ctx, err)
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
+	
+	return nil
 }
