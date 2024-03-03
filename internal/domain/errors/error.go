@@ -14,8 +14,8 @@ const (
 )
 
 type TodoError struct {
-	Code   Code
-	Err error
+	Code Code
+	Err  error
 }
 
 func (e TodoError) Error() string {
@@ -24,7 +24,7 @@ func (e TodoError) Error() string {
 
 func NewTodoNotFoundError(id uuid.UUID) *TodoError {
 	return &TodoError{
-		Code:   ErrCodeTicketNotFound,
-		Err: fmt.Errorf("todo with id %s not found", id),
+		Code: ErrCodeTicketNotFound,
+		Err:  fmt.Errorf("todo with id %s not found", id),
 	}
 }
