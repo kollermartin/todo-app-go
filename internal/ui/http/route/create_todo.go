@@ -21,8 +21,6 @@ func NewCreateTodoRoute(todoHandler *todo.TodoHandler) func(ctx *gin.Context) {
 			return
 		}
 
-
-
 		createdTodo, err := todoHandler.CreateTodo(ctx, &req)
 		if err != nil {
 			ctx.AbortWithStatusJSON(errors.GetStatusAndHttpError(err))

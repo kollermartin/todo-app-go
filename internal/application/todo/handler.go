@@ -15,7 +15,7 @@ import (
 type TodoHandler struct {
 	repo repository.TodoRepository
 }
-//TODo zbavit se ctx z application vrstvy
+
 func NewTodoHandler(repo repository.TodoRepository) *TodoHandler {
 	return &TodoHandler{repo}
 }
@@ -51,10 +51,10 @@ func (th *TodoHandler) CreateTodo(ctx *gin.Context, todoReq *request.CreateTodoR
 	return createdTodo, nil
 }
 
-func (th *TodoHandler) UpdateTodo(ctx *gin.Context, id uuid.UUID , todoReq *request.UpdateTodoRequest) (*entity.Todo, error) {
+func (th *TodoHandler) UpdateTodo(ctx *gin.Context, id uuid.UUID, todoReq *request.UpdateTodoRequest) (*entity.Todo, error) {
 	todo := entity.Todo{
 		Title: todoReq.Title,
-		UUID: id,
+		UUID:  id,
 	}
 
 	updatedTodo, err := th.repo.UpdateTodo(ctx, &todo)
@@ -70,6 +70,6 @@ func (th *TodoHandler) DeleteTodo(ctx *gin.Context, id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }

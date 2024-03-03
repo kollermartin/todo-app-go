@@ -7,12 +7,12 @@ import (
 )
 
 var ErrorStatusMap = map[error]int{
-	errors.ErrInternal: http.StatusInternalServerError,
+	errors.ErrInternal:       http.StatusInternalServerError,
 	errors.ErrTicketNotFound: http.StatusNotFound,
 }
 
 type HTTPError struct {
-	Code	string    `json:"code"`
+	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -38,12 +38,12 @@ func NewNotFound() *HTTPError {
 func GetStatusAndHttpError(err error) (int, *HTTPError) {
 	if code, ok := ErrorStatusMap[err]; ok {
 		switch code {
-			case http.StatusNotFound:
-				return http.StatusNotFound, NewNotFound()
-			case http.StatusInternalServerError:
-				return http.StatusInternalServerError, NewInternalServerError()
-			default:
-				return http.StatusInternalServerError, NewInternalServerError()	
+		case http.StatusNotFound:
+			return http.StatusNotFound, NewNotFound()
+		case http.StatusInternalServerError:
+			return http.StatusInternalServerError, NewInternalServerError()
+		default:
+			return http.StatusInternalServerError, NewInternalServerError()
 		}
 	}
 

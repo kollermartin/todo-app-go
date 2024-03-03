@@ -28,22 +28,22 @@ func NewUpdateTodoRoute(th *todo.TodoHandler) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, uiErrors.NewBadRequest(errors.New("invalid ID")))
 			return
 		}
-	
+
 		var req request.UpdateTodoRequest
-	
+
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, uiErrors.NewBadRequest(err))
 			return
 		}
-	
+
 		updatedTodo, err := th.UpdateTodo(ctx, parsedUUID, &req)
 		if err != nil {
 			ctx.AbortWithStatusJSON(uiErrors.GetStatusAndHttpError(err))
 			return
 		}
-	
+
 		rsp := response.NewTodoResponse(updatedTodo)
-	
+
 		ctx.JSON(http.StatusOK, rsp)
 	}
 }
