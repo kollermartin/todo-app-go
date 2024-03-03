@@ -50,7 +50,7 @@ func (tr *TodoRepository) GetTodo(ctx context.Context, uuid uuid.UUID) (*entity.
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.ErrTicketNotFound
+			return nil, errors.NewTodoNotFoundError(uuid)
 		}
 
 		return nil, err
@@ -79,7 +79,7 @@ func (tr *TodoRepository) UpdateTodo(ctx context.Context, todo *entity.Todo) (*e
 	err := tr.db.SqlDB.QueryRow("UPDATE todos SET title = $1, updated_at = now() WHERE uuid = $2 RETURNING id, uuid, title, created_at, updated_at", todo.Title, todo.UUID).Scan(&updatedTodo.ID, &updatedTodo.UUID, &updatedTodo.Title, &updatedTodo.CreatedAt, &updatedTodo.UpdatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.ErrTicketNotFound
+		return nil, errors.NewTodoNotFoundError(todo.UUID)
 	}
 
 	if err != nil {
@@ -102,7 +102,7 @@ func (tr *TodoRepository) DeleteTodo(ctx context.Context, uuid uuid.UUID) error 
 	}
 
 	if rowsAffected == 0 {
-		return errors.ErrTicketNotFound
+		return errors.NewTodoNotFoundError(uuid)
 	}
 
 	return nil
