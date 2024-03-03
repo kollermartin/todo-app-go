@@ -38,7 +38,7 @@ func (th *TodoHandler) GetTodo(ctx *gin.Context, id uuid.UUID) (*entity.Todo, er
 	return todo, nil
 }
 
-func (th *TodoHandler) CreateTodo(ctx *gin.Context, todoReq *request.CreateRequest) (*entity.Todo, error) {
+func (th *TodoHandler) CreateTodo(ctx *gin.Context, todoReq *request.CreateTodoRequest) (*entity.Todo, error) {
 	todo := entity.Todo{
 		Title: todoReq.Title,
 	}
@@ -51,7 +51,7 @@ func (th *TodoHandler) CreateTodo(ctx *gin.Context, todoReq *request.CreateReque
 	return createdTodo, nil
 }
 
-func (th *TodoHandler) UpdateTodo(ctx *gin.Context, id uuid.UUID , todoReq *request.UpdateRequest) (*entity.Todo, error) {
+func (th *TodoHandler) UpdateTodo(ctx *gin.Context, id uuid.UUID , todoReq *request.UpdateTodoRequest) (*entity.Todo, error) {
 	todo := entity.Todo{
 		Title: todoReq.Title,
 		UUID: id,
@@ -63,40 +63,6 @@ func (th *TodoHandler) UpdateTodo(ctx *gin.Context, id uuid.UUID , todoReq *requ
 	}
 
 	return updatedTodo, nil
-	// id := ctx.Param("id")
-
-	// if id == "" {
-	// 	response.HandleValidationError(ctx, "ID is required")
-	// 	return
-	// }
-
-	// parsedUUID, err := uuid.Parse(id)
-	// if err != nil {
-	// 	response.HandleValidationError(ctx, "Invalid ID")
-	// 	return
-	// }
-
-	// var req request.UpdateRequest
-
-	// if err := ctx.ShouldBindJSON(&req); err != nil {
-	// 	response.HandleValidationError(ctx, err.Error())
-	// 	return
-	// }
-
-	// todo := entity.Todo{
-	// 	UUID:  parsedUUID,
-	// 	Title: req.Title,
-	// }
-
-	// updatedTodo, err := th.repo.UpdateTodo(ctx, &todo)
-	// if err != nil {
-	// 	response.HandleError(ctx, err)
-	// 	return
-	// }
-
-	// rsp := response.NewTodoResponse(updatedTodo)
-
-	// ctx.JSON(http.StatusOK, rsp)
 }
 
 func (th *TodoHandler) DeleteTodo(ctx *gin.Context, id uuid.UUID) error {

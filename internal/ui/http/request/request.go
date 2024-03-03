@@ -1,9 +1,9 @@
 package request
 
-type CreateRequest struct {
+type CreateTodoRequest struct {
 	Title string `json:"title" binding:"required"`
 }
 
-type UpdateRequest struct {
+type UpdateTodoRequest struct {
 	Title string `json:"title" binding:"required"`
 }

@@ -1,8 +1,10 @@
 package route
 
 import (
+	"errors"
 	"net/http"
 	"todo-app/internal/application/todo"
+	uiErrors "todo-app/internal/ui/http/errors"
 	"todo-app/internal/ui/http/response"
 
 	"github.com/gin-gonic/gin"
@@ -16,19 +18,19 @@ func NewGetTodoRoute(todoHandler *todo.TodoHandler) func(ctx *gin.Context) {
 		id := ctx.Param("id")
 
 		if id == "" {
-			response.HandleValidationError(ctx, "ID is required")
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, uiErrors.NewBadRequest(errors.New("ID is required")))
 			return
 		}
 
 		parsedUUID, err := uuid.Parse(id)
 		if err != nil {
-			response.HandleValidationError(ctx, "Invalid ID")
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, uiErrors.NewBadRequest(errors.New("invalid ID")))
 			return
 		}
 
 		todo, err := todoHandler.GetTodo(ctx, parsedUUID)
 		if err != nil {
-			response.HandleError(ctx, err)
+			ctx.AbortWithStatusJSON(uiErrors.GetStatusAndHttpError(err))
 			return
 		}
 

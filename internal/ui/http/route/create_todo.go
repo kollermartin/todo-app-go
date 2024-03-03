@@ -3,6 +3,7 @@ package route
 import (
 	"net/http"
 	"todo-app/internal/application/todo"
+	"todo-app/internal/ui/http/errors"
 	"todo-app/internal/ui/http/request"
 	"todo-app/internal/ui/http/response"
 
@@ -13,10 +14,10 @@ const CreateTodoPath = "/todos"
 
 func NewCreateTodoRoute(todoHandler *todo.TodoHandler) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
-		var req request.CreateRequest
+		var req request.CreateTodoRequest
 
 		if err := ctx.ShouldBindJSON(&req); err != nil {
-			response.HandleValidationError(ctx, err.Error())
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, errors.NewBadRequest(err))
 			return
 		}
 
@@ -24,7 +25,7 @@ func NewCreateTodoRoute(todoHandler *todo.TodoHandler) func(ctx *gin.Context) {
 
 		createdTodo, err := todoHandler.CreateTodo(ctx, &req)
 		if err != nil {
-			response.HandleError(ctx, err)
+			ctx.AbortWithStatusJSON(errors.GetStatusAndHttpError(err))
 			return
 		}
 

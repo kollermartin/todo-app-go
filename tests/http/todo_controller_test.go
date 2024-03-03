@@ -161,7 +161,7 @@ func TestGetTodoByID(t *testing.T) {
 func TestCreateTodo(t *testing.T) {
 	t.Run("It should create a new todo", func(t *testing.T) {
 
-		todoInput := request.CreateRequest{
+		todoInput := request.CreateTodoRequest{
 			Title: "Test todo",
 		}
 
@@ -189,7 +189,7 @@ func TestCreateTodo(t *testing.T) {
 	})
 
 	t.Run("It should return 400 if title is missing", func(t *testing.T) {
-		todoInput := request.CreateRequest{
+		todoInput := request.CreateTodoRequest{
 			Title: "",
 		}
 
@@ -221,7 +221,7 @@ func TestUpdateTodo(t *testing.T) {
 
 		todo := response.NewTodoResponse(&todos[0])
 
-		todoInput := request.UpdateRequest{
+		todoInput := request.UpdateTodoRequest{
 			Title: "Updated task",
 		}
 
@@ -251,7 +251,7 @@ func TestUpdateTodo(t *testing.T) {
 
 	t.Run("It should return 404 if todo doesnt exist", func(t *testing.T) {
 		randomUUID := uuid.New().String()
-		todoInput := request.UpdateRequest{
+		todoInput := request.UpdateTodoRequest{
 			Title: "Updated task",
 		}
 

@@ -3,6 +3,7 @@ package route
 import (
 	"net/http"
 	"todo-app/internal/application/todo"
+	"todo-app/internal/ui/http/errors"
 	"todo-app/internal/ui/http/response"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,7 @@ func NewGetTodosRoute(todoHandler *todo.TodoHandler) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		todos, err := todoHandler.GetAllTodos(ctx)
 		if err != nil {
-			response.HandleError(ctx, err)
+			ctx.AbortWithStatusJSON(errors.GetStatusAndHttpError(err))
 			return
 		}
 
